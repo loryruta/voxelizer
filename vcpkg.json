@@ -1,0 +1,12 @@
+{
+  "name": "3d-rasterizer",
+  "version": "1.0",
+  "description": "Convert a 3D model into a 3D volume",
+  "dependencies": [
+    "assimp",
+    "libzip",
+    "glm",
+    "stb",
+    "glfw3"
+  ]
+}

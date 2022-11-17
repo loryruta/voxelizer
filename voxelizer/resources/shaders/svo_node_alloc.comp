@@ -1,0 +1,34 @@
+#version 430
+
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 1) buffer ssbo_octree { uint b_octree[]; };
+
+layout(binding = 2) uniform atomic_uint u_alloc_counter; // Counts how many allocations has been done.
+
+uniform uint u_start; // The index where the current level starts.
+uniform uint u_count; // How many nodes this level has.
+
+uniform uint u_alloc_start; // The last free index of the buffer, where to allocate.
+
+void main()
+{
+	uint id = gl_GlobalInvocationID.x;
+	if (id >= u_count)
+		return;
+
+	uint node_addr = u_start + id;
+
+	uint node_val = b_octree[int(node_addr)];
+	if ((node_val & 0x80000000u) != 0) // The node has been flagged.
+	{
+		uint child_addr = atomicCounterIncrement(u_alloc_counter);
+
+		child_addr *= 8;			 // Every node takes 8 cells.
+		child_addr += u_alloc_start; // The position of the child starts from the current free index.
+		child_addr |= 0x80000000u;   // Masks it.
+
+		b_octree[node_addr] = child_addr;
+	}
+}
+
