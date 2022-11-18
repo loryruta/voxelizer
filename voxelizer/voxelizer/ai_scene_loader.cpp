@@ -168,25 +168,57 @@ std::shared_ptr<Mesh> load_mesh(const aiMesh* ai_mesh, const aiMatrix4x4& ai_tra
 // Material
 // ================================================================================================================================
 
-void load_material_texture(const GLuint& texture, aiTextureType texture_type, const std::filesystem::path& folder, const aiMaterial* ai_material)
+void load_material_texture(
+	aiScene const& ai_scene,
+	GLuint const& texture,
+	aiTextureType texture_type,
+	std::filesystem::path const& folder,
+	aiMaterial const* ai_material
+)
 {
 	glBindTexture(GL_TEXTURE_2D, texture);
 
-	aiString path;
+	aiString path{};
 	if (aiGetMaterialTexture(ai_material, texture_type, 0, &path) == aiReturn_SUCCESS && path.length > 0)
 	{
-		int width, height;
-		uint8_t* image_data = stbi_load((folder / path.C_Str()).u8string().c_str(), &width, &height, NULL, STBI_rgb_alpha);
+		int width, height, comp;
+		stbi_uc* image_data{};
 
-		if (width < 0 || height < 0 || image_data == nullptr)
+		if (path.C_Str()[0] == '*') // Embedded
 		{
-			fprintf(stderr, "Width or height are negative or data is null\n");
-			fflush(stderr);
+			int32_t texture_id = std::atoi(path.C_Str() + 1);
+			aiTexture* ai_texture = ai_scene.mTextures[texture_id];
 
-			throw std::runtime_error("Invalid image");
+			printf("[assimp_scene_loader] Embedded texture %d (width=%d, height=%d)\n", texture_id, ai_texture->mWidth, ai_texture->mHeight);
+
+			size_t texture_size = ai_texture->mWidth * (ai_texture->mHeight > 0 ? ai_texture->mHeight : 1);
+			image_data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(ai_texture->pcData), texture_size, &width, &height, &comp, 0);
+		}
+		else // External file
+		{
+			std::filesystem::path texture_path = folder / path.C_Str();
+
+			printf("[assimp_scene_loader] Loading external texture at \"%s\"\n", texture_path.u8string().c_str());
+
+			image_data = stbi_load((folder / path.C_Str()).u8string().c_str(), &width, &height, &comp, STBI_rgb);
 		}
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+		if (image_data == nullptr)
+		{
+			fprintf(stderr, "[assimp_scene_loader] Failed to load texture \"%s\"\n", path.C_Str());
+			fflush(stderr);
+
+			throw std::runtime_error("Failed to load texture");
+		}
+
+		if (comp == 3)
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data);
+		}
+		else if (comp == 4)
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+		}
 
 		stbi_image_free(image_data);
 	}
@@ -210,29 +242,33 @@ void load_material_color(glm::vec4& color, const char* key, unsigned int type, u
 		color = glm::vec4(0);
 }
 
-std::shared_ptr<Material> load_material(const std::filesystem::path& folder, const aiMaterial* ai_material)
+std::shared_ptr<Material> load_material(
+	aiScene const& ai_scene,
+	std::filesystem::path const& folder,
+	aiMaterial const* ai_material
+)
 {
-	auto material = std::make_shared<Material>();
-	Material::Type type;
+	std::shared_ptr<Material> material = std::make_shared<Material>();
+	Material::Type type{};
 	
 	type = Material::Type::NONE;
-	load_material_texture(material->get_texture(type), aiTextureType_NONE, folder, ai_material);
+	load_material_texture(ai_scene, material->get_texture(type), aiTextureType_NONE, folder, ai_material);
 	material->get_color(type) = glm::vec4(1);
 
 	type = Material::Type::DIFFUSE;
-	load_material_texture(material->get_texture(type), aiTextureType_DIFFUSE, folder, ai_material);
+	load_material_texture(ai_scene, material->get_texture(type), aiTextureType_DIFFUSE, folder, ai_material);
 	load_material_color(material->get_color(type), AI_MATKEY_COLOR_DIFFUSE, ai_material);
 
 	type = Material::Type::AMBIENT;
-	load_material_texture(material->get_texture(type), aiTextureType_AMBIENT, folder, ai_material);
+	load_material_texture(ai_scene, material->get_texture(type), aiTextureType_AMBIENT, folder, ai_material);
 	load_material_color(material->get_color(type), AI_MATKEY_COLOR_AMBIENT, ai_material);
 
 	type = Material::Type::SPECULAR;
-	load_material_texture(material->get_texture(type), aiTextureType_SPECULAR, folder, ai_material);
+	load_material_texture(ai_scene, material->get_texture(type), aiTextureType_SPECULAR, folder, ai_material);
 	load_material_color(material->get_color(type), AI_MATKEY_COLOR_SPECULAR, ai_material);
 
 	type = Material::Type::EMISSIVE;
-	load_material_texture(material->get_texture(type), aiTextureType_EMISSIVE, folder, ai_material);
+	load_material_texture(ai_scene, material->get_texture(type), aiTextureType_EMISSIVE, folder, ai_material);
 	load_material_color(material->get_color(type), AI_MATKEY_COLOR_EMISSIVE, ai_material);
 
 	return material;
@@ -242,16 +278,16 @@ std::shared_ptr<Material> load_material(const std::filesystem::path& folder, con
 // Node
 // ------------------------------------------------------------------------------------------------
 
-void load_node(voxelizer::scene& scene, const aiScene* ai_scene, const std::filesystem::path& folder, aiMatrix4x4 ai_transform, const aiNode* ai_node)
+void load_node(voxelizer::scene& scene, aiScene const& ai_scene, const std::filesystem::path& folder, aiMatrix4x4 ai_transform, const aiNode* ai_node)
 {
 	ai_transform *= ai_node->mTransformation;
 
 	for (size_t i = 0; i < ai_node->mNumMeshes; i++)
 	{
-		auto ai_mesh = ai_scene->mMeshes[ai_node->mMeshes[i]];
+		auto ai_mesh = ai_scene.mMeshes[ai_node->mMeshes[i]];
 
 		auto mesh = load_mesh(ai_mesh, ai_transform);
-		mesh->material = load_material(folder, ai_scene->mMaterials[ai_mesh->mMaterialIndex]);
+		mesh->material = load_material(ai_scene, folder, ai_scene.mMaterials[ai_mesh->mMaterialIndex]);
 
 		scene.m_transformed_min = glm::min(scene.m_transformed_min, mesh->m_transformed_min);
 		scene.m_transformed_max = glm::max(scene.m_transformed_max, mesh->m_transformed_max);
@@ -274,10 +310,10 @@ voxelizer::assimp_scene_loader::assimp_scene_loader()
 void voxelizer::assimp_scene_loader::load(scene& scene, std::filesystem::path const& path)
 {
 	Assimp::Importer importer;
-	const aiScene* ai_scene = importer.ReadFile(path.u8string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+	aiScene const* ai_scene = importer.ReadFile(path.u8string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
 
 	scene.m_transformed_min = glm::vec3(+std::numeric_limits<float>::infinity());
 	scene.m_transformed_max = glm::vec3(-std::numeric_limits<float>::infinity());
 
-	load_node(scene, ai_scene, path.parent_path(), aiMatrix4x4(),  ai_scene->mRootNode);
+	load_node(scene, *ai_scene, path.parent_path(), aiMatrix4x4(),  ai_scene->mRootNode);
 }

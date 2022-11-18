@@ -55,7 +55,7 @@ struct Program
 	void attach_shader(const Shader& shader);
 	void detach_shader(const Shader& shader);
 
-	bool link();
+	void link();
 
 	void use();
 	static void unuse();

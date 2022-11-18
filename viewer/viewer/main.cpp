@@ -44,7 +44,7 @@ void process_freecam_movement_and_rotation(
 	// Movement
 	const float k_movement_speed = 0.1f;
 
-	float speed = k_movement_speed * (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) ? 10 : 0);
+	float speed = k_movement_speed * (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) ? 10 : 1);
 	float intensity = speed * dt;
 
 	if (glfwGetKey(window, GLFW_KEY_A)) camera.offsetPosition(-camera.right() * intensity);
@@ -149,13 +149,14 @@ int main(int argc, char** argv)
 		if (last_time.has_value())
 		{
 			dt = static_cast<float>(glfwGetTime() - *last_time);
-			last_time = glfwGetTime();
  		}
+
+		last_time = glfwGetTime();
 
 		glm::dvec2 cursor_position{};
 		glfwGetCursorPos(window, &cursor_position.x, &cursor_position.y);
 
-		if (last_cursor_position)
+		if (dt > 0 && last_cursor_position)
 		{
 			process_freecam_movement_and_rotation(
 				window,
@@ -166,6 +167,12 @@ int main(int argc, char** argv)
 		}
 
 		last_cursor_position = cursor_position;
+
+		/*
+		printf("Camera position=(%.1f, %.1f, %.1f) rotation=(%.1f, %.1f)\n",
+			camera.position().x, camera.position().y, camera.position().z,
+			camera.horizontalAngle(), camera.verticalAngle()
+		);*/
 
 		// Render
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -180,7 +187,7 @@ int main(int argc, char** argv)
 		octree_tracer.render(
 			glm::uvec2(width, height),
 			glm::vec3(0),
-			glm::vec3(128),
+			glm::vec3(1),
 			camera.projection(),
 			camera.view(),
 			camera.position(),
