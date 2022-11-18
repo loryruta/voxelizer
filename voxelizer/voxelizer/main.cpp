@@ -7,10 +7,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/integer.hpp>
 
+#include <common/octree.hpp>
+
+#include "octree_builder.hpp"
 #include "ai_scene_loader.hpp"
 #include "scene.hpp"
 #include "voxelize.hpp"
-#include "octree.hpp"
 
 void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* userParam)
 {
@@ -68,7 +70,7 @@ void run_voxelizer(
 	GLuint const* octree_buffer_ptr =
 		(GLuint const*) glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, octree_bytesize, GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT);
 
-	std::ofstream output_file_stream(output_file_path);
+	std::ofstream output_file_stream(output_file_path, std::ios::binary);
 	output_file_stream.write(reinterpret_cast<char const*>(octree_buffer_ptr), octree_bytesize);
 }
 
@@ -124,8 +126,8 @@ int main(int argc, char* argv[])
 		return 2;
 	}
 
-	//glEnable(GL_DEBUG_OUTPUT);
-	//glDebugMessageCallback(message_callback, nullptr);
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(message_callback, nullptr);
 
 	run_voxelizer(input_file_path, volume_height, output_file_path);
 

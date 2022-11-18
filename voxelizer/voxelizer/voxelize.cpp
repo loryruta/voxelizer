@@ -3,11 +3,11 @@
 #include <iostream>
 
 #include <glm/gtc/type_ptr.hpp>
-
 #include <shinji.hpp>
 
+#include <common/util/render_doc.hpp>
+
 #include "voxel_list.hpp"
-#include "util/render_doc.hpp"
 
 voxelizer::voxelize::voxelize()
 {

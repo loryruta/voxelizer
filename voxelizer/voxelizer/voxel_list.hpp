@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 
-#include "util/gl.hpp"
+#include <common/util/gl.hpp>
 
 namespace voxelizer
 {

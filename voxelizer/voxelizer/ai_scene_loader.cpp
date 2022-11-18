@@ -177,6 +177,15 @@ void load_material_texture(const GLuint& texture, aiTextureType texture_type, co
 	{
 		int width, height;
 		uint8_t* image_data = stbi_load((folder / path.C_Str()).u8string().c_str(), &width, &height, NULL, STBI_rgb_alpha);
+
+		if (width < 0 || height < 0 || image_data == nullptr)
+		{
+			fprintf(stderr, "Width or height are negative or data is null\n");
+			fflush(stderr);
+
+			throw std::runtime_error("Invalid image");
+		}
+
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
 
 		stbi_image_free(image_data);
