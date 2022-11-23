@@ -12,6 +12,9 @@
 #include "scene_renderer.hpp"
 #include "octree_tracer.hpp"
 
+bool g_show_octree = true;
+bool g_show_scene  = false;
+
 void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* userParam)
 {
 	if (severity <= GL_DEBUG_SEVERITY_MEDIUM && type == GL_DEBUG_TYPE_ERROR)
@@ -23,16 +26,24 @@ void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum s
 
 void on_key(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) // ESCAPE
 	{
 		int input_mode = glfwGetInputMode(window, GLFW_CURSOR);
 		if (input_mode == GLFW_CURSOR_DISABLED) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		else if (input_mode == GLFW_CURSOR_NORMAL) glfwSetWindowShouldClose(window, true);
 	}
-	else if (key == GLFW_KEY_ENTER && action == GLFW_PRESS)
+	else if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) // ENTER
 	{
 		int input_mode = glfwGetInputMode(window, GLFW_CURSOR);
 		if (input_mode == GLFW_CURSOR_NORMAL) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+	else if (key == GLFW_KEY_F1 && action == GLFW_PRESS) // F1
+	{
+		g_show_octree = !g_show_octree;
+	}
+	else if (key == GLFW_KEY_F2 && action == GLFW_PRESS) // F2
+	{
+		g_show_scene = !g_show_scene;
 	}
 }
 
@@ -209,21 +220,24 @@ int main(int argc, char** argv)
 		camera.setViewportAspectRatio(width / (float) height);
 
 		// Render octree
-		octree_tracer.render(
-			glm::uvec2(width, height),
-			glm::vec3(0),
-			glm::vec3(1),
-			camera.projection(),
-			camera.view(),
-			camera.position(),
-			octree_buffer,
-			0,
-			octree_buffer_size,
-			0
-		);
+		if (g_show_octree)
+		{
+			octree_tracer.render(
+				glm::uvec2(width, height),
+				glm::vec3(0),
+				glm::vec3(1),
+				camera.projection(),
+				camera.view(),
+				camera.position(),
+				octree_buffer,
+				0,
+				octree_buffer_size,
+				0
+			);
+		}
 
 		// Render scene
-		if (scene)
+		if (g_show_scene && scene)
 		{
 			scene_renderer.render(
 				camera.projection() * camera.view(),
