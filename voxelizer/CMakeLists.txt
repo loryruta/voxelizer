@@ -1,28 +1,39 @@
 
 set(SRC
+	voxelizer/util/camera.cpp
+	voxelizer/util/camera.hpp
+	voxelizer/util/gl.cpp
+	voxelizer/util/gl.hpp
+	voxelizer/util/radix_sort.hpp
+	voxelizer/util/render_doc.cpp
+	voxelizer/util/render_doc.hpp
+	voxelizer/util/screen_quad.cpp
+	voxelizer/util/screen_quad.hpp
+	voxelizer/util/std_integration.hpp
 	voxelizer/ai_scene_loader.cpp
 	voxelizer/ai_scene_loader.hpp
-	voxelizer/main.cpp
 	voxelizer/mesh.cpp
 	voxelizer/mesh.hpp
+	voxelizer/octree.cpp
+	voxelizer/octree.hpp
 	voxelizer/octree_builder.cpp
 	voxelizer/octree_builder.hpp
 	voxelizer/scene.hpp
-	voxelizer/voxelize.cpp
-	voxelizer/voxelize.hpp
 	voxelizer/voxel_list.cpp
 	voxelizer/voxel_list.hpp
+	voxelizer/voxelize.cpp
+	voxelizer/voxelize.hpp
 )
 
-add_executable(voxelizer ${SRC})
+add_library(voxelizer ${SRC})
 
 # ------------------------------------------------------------------------------------------------
 # Dependencies
 # ------------------------------------------------------------------------------------------------
 
-# common
-target_include_directories(voxelizer PUBLIC "${CMAKE_SOURCE_DIR}/common")
-target_link_libraries(voxelizer PUBLIC common)
+# GLM
+find_package(glm CONFIG REQUIRED)
+target_link_libraries(voxelizer PUBLIC glm::glm)
 
 # assimp
 find_package(assimp CONFIG REQUIRED)
@@ -44,14 +55,23 @@ find_package(Stb REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 target_link_libraries(voxelizer PUBLIC glfw)
 
+# glad
+target_sources(voxelizer
+    PUBLIC
+        ${CMAKE_SOURCE_DIR}/third_party/glad/src/glad.c
+        ${CMAKE_SOURCE_DIR}/third_party/glad/include/glad/glad.h
+        ${CMAKE_SOURCE_DIR}/third_party/glad/include/KHR/khrplatform.h
+)
+target_include_directories(voxelizer PUBLIC ${CMAKE_SOURCE_DIR}/third_party/glad/include)
+
+# renderdoc
+target_include_directories(voxelizer PUBLIC ${CMAKE_SOURCE_DIR}/third_party/renderdoc)
+
 # ------------------------------------------------------------------------------------------------
 # Embed resources
 # ------------------------------------------------------------------------------------------------
 
 shinji_embed(voxelizer
-	resources/shaders/phong.frag
-	resources/shaders/scene.vert
-	resources/shaders/screen_quad.vert
 	resources/shaders/svo_node_alloc.comp
 	resources/shaders/svo_node_flag.comp
 	resources/shaders/svo_node_init.comp
@@ -62,3 +82,11 @@ shinji_embed(voxelizer
 	resources/shaders/voxelize.vert
 )
 shinji_finalize(voxelizer)
+
+# ------------------------------------------------------------------------------------------------
+# Executable
+# ------------------------------------------------------------------------------------------------
+
+add_executable(voxelizer_exec voxelizer/main.cpp)
+
+target_link_libraries(voxelizer_exec PRIVATE voxelizer)

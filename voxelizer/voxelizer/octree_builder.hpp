@@ -1,8 +1,7 @@
 #pragma once
 
-#include <common/util/gl.hpp>
-#include <common/octree.hpp>
-
+#include "util/gl.hpp"
+#include "octree.hpp"
 #include "voxel_list.hpp"
 
 namespace voxelizer

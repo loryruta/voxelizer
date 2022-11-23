@@ -20,29 +20,36 @@ Material::~Material()
 // Mesh
 // ------------------------------------------------------------------------------------------------
 
-Mesh::Mesh() :
-	vao([]() {
-		GLuint vao;
-		glGenVertexArrays(1, &vao);
-		return vao;
-	}()),
-	vbo([]() {
-		std::array<GLuint, Mesh::Attribute::size> vbo;
-		glGenBuffers(Mesh::Attribute::size, vbo.data());
-		return vbo;
-	}()),
-	ebo([]() {
-		GLuint ebo;
-		glGenBuffers(1, &ebo);
-		return ebo;
-	}())
-{}
+Mesh::Mesh()
+{
+	glGenVertexArrays(1, &m_vao);
+	glGenBuffers(Mesh::Attribute::size, m_vbos.data());
+	glGenBuffers(1, &m_ebo);
+}
+
+Mesh::Mesh(Mesh&& other) noexcept :
+	m_valid(true),
+
+	m_vao(other.m_vao),
+	m_vbos(other.m_vbos),
+	m_ebo(other.m_ebo),
+	m_triangle_count(other.m_triangle_count),
+	m_element_count(other.m_element_count),
+	m_transform(other.m_transform),
+	m_material(other.m_material),
+	m_transformed_min(other.m_transformed_min),
+	m_transformed_max(other.m_transformed_max)
+{
+	other.m_valid = false;
+}
 
 Mesh::~Mesh()
 {
-	glDeleteVertexArrays(1, &this->vao);
-	glDeleteBuffers(Mesh::Attribute::size, this->vbo.data());
-
-	glDeleteBuffers(1, &this->ebo);
+	if (m_valid)
+	{
+		glDeleteVertexArrays(1, &m_vao);
+		glDeleteBuffers(Mesh::Attribute::size, m_vbos.data());
+		glDeleteBuffers(1, &m_ebo);
+	}
 }
 

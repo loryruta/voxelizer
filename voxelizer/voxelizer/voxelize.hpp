@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 
-#include <common/util/gl.hpp>
+#include "util/gl.hpp"
 #include "scene.hpp"
 #include "voxel_list.hpp"
 

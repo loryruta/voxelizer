@@ -1,5 +1,6 @@
 #include "render_doc.hpp"
 
+#include <cstdio>
 #include <iostream>
 
 #include <renderdoc_app.h>
@@ -19,6 +20,8 @@ void renderdoc_init()
 			std::cerr << "RenderDoc failed to initialize, result: " << result << std::endl;
 			return;
 		}
+
+		printf("Renderdoc module initialized\n");
 	}
 }
 
@@ -28,13 +31,15 @@ void rgc::renderdoc::watch(bool capture, std::function<void()> const& f)
 		renderdoc_init();
 	}
 
-	if (g_handle && capture) {
+	if (g_handle && capture)
+	{
 		g_handle->StartFrameCapture(NULL, NULL);
 	}
 
 	f();
 
-	if (g_handle && capture) {
+	if (g_handle && capture)
+	{
 		g_handle->EndFrameCapture(NULL, NULL);
 	}
 }

@@ -2,9 +2,9 @@
 
 #include <glm/glm.hpp>
 
-#include <common/util/gl.hpp>
-#include <common/util/screen_quad.hpp>
-#include <common/octree.hpp>
+#include <voxelizer/util/gl.hpp>
+#include <voxelizer/util/screen_quad.hpp>
+#include <voxelizer/octree.hpp>
 
 namespace voxelizer
 {

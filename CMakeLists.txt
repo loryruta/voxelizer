@@ -5,14 +5,9 @@ set(CMAKE_CXX_STANDARD 17)
 
 # shinji
 include(FetchContent)
-message(STATUS "Fetching shinji...")
-FetchContent_Declare(
-    shinji
-    GIT_REPOSITORY "https://github.com/loryruta/shinji"
-)
-FetchContent_MakeAvailable(shinji)
-include("${shinji_SOURCE_DIR}/shinji.cmake")
 
-add_subdirectory(common)
+message(STATUS "Loading shinji...")
+include("${CMAKE_CURRENT_SOURCE_DIR}/shinji.cmake")
+
 add_subdirectory(voxelizer)
 add_subdirectory(viewer)

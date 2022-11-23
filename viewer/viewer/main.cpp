@@ -6,8 +6,10 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <common/util/camera.hpp>
+#include <voxelizer/util/camera.hpp>
+#include <voxelizer/ai_scene_loader.hpp>
 
+#include "scene_renderer.hpp"
 #include "octree_tracer.hpp"
 
 void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* userParam)
@@ -55,7 +57,7 @@ void process_freecam_movement_and_rotation(
 	if (glfwGetKey(window, GLFW_KEY_SPACE)) camera.offsetPosition(glm::vec3(0, 1, 0) * intensity);
 
 	// Rotation
-	const float k_rotation_speed = 0.01f;
+	const float k_rotation_speed = 2.0f;
 
 	float dp = (float) cursor_position_delta.y * k_rotation_speed * dt;
 	float dy = (float) cursor_position_delta.x * k_rotation_speed * dt;
@@ -70,22 +72,34 @@ int main(int argc, char** argv)
 
 	if (argc < 1)
 	{
-		printf("Invalid command syntax: ./viewer <svo-file>\n");
+		printf("Invalid command syntax: ./viewer <svo-file> [model-file]\n");
 		return 1;
 	}
 
-	std::filesystem::path input_file = argv[0];
-
-	if (!std::filesystem::exists(input_file))
+	// SVO file
+	std::filesystem::path svo_file = argv[0];
+	if (!std::filesystem::exists(svo_file))
 	{
-		printf("File not found: %s\n", input_file.u8string().c_str());
+		printf("Invalid file: %s\n", svo_file.u8string().c_str());
 		return 2;
+	}
+
+	// Model file
+	std::optional<std::filesystem::path> model_file{};
+	if (argc >= 2)
+	{
+		model_file = argv[1];
+		if (!std::filesystem::exists(*model_file))
+		{
+			printf("Invalid file: %s\n", model_file->u8string().c_str());
+			return 3;
+		}
 	}
 
 	if (glfwInit() != GLFW_TRUE)
 	{
-		std::cerr << "GLFW failed to initialize." << std::endl;
-		return 2;
+		std::cerr << "GLFW failed to initialize" << std::endl;
+		return 3;
 	}
 
 	GLFWwindow* window = glfwCreateWindow(720, 720, "viewer", nullptr, nullptr);
@@ -94,7 +108,7 @@ int main(int argc, char** argv)
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		std::cerr << "GLAD failed to initialize." << std::endl;
-		return 2;
+		return 4;
 	}
 
 	glfwShowWindow(window);
@@ -110,6 +124,7 @@ int main(int argc, char** argv)
 
 	tdogl::Camera camera{};
 	voxelizer::octree_tracer octree_tracer{};
+	voxelizer::scene_renderer scene_renderer{};
 
 	// Load octree
 	printf("Loading octree at \"%s\"\n", argv[0]);
@@ -117,12 +132,12 @@ int main(int argc, char** argv)
 	GLuint octree_buffer{};
 	glGenBuffers(1, &octree_buffer);
 
-	std::ifstream input_file_stream(input_file, std::ios::binary);
+	std::ifstream input_file_stream(svo_file, std::ios::binary);
 
 	input_file_stream.seekg(0, std::ios::end);
 	size_t octree_buffer_size = input_file_stream.tellg();
 
-	printf("Octree size is %.1f MB\n", float(octree_buffer_size) / float(1024 * 1024));
+	printf("Octree size is %zu bytes ~ %.1f MB\n", octree_buffer_size, octree_buffer_size / (float) (1024 * 1024));
 
 	std::vector<char> octree_buffer_data(octree_buffer_size);
 
@@ -133,6 +148,16 @@ int main(int argc, char** argv)
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, octree_buffer);
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, octree_buffer_size, octree_buffer_data.data(), NULL);
+
+	// Load scene
+	std::optional<voxelizer::scene> scene{};
+	if (model_file)
+	{
+		voxelizer::assimp_scene_loader scene_loader{};
+
+		scene = voxelizer::scene{};
+		scene_loader.load(*scene, *model_file);
+	}
 
 	// Main loop
 	printf("Starting loop\n");
@@ -174,7 +199,6 @@ int main(int argc, char** argv)
 			camera.horizontalAngle(), camera.verticalAngle()
 		);*/
 
-		// Render
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.7f, 0.7f, 0.7f, 0);
 
@@ -182,8 +206,9 @@ int main(int argc, char** argv)
 		glfwGetFramebufferSize(window, &width, &height);
 		glViewport(0, 0, width, height);
 
-		camera.setViewportAspectRatio(width / static_cast<float>(height));
+		camera.setViewportAspectRatio(width / (float) height);
 
+		// Render octree
 		octree_tracer.render(
 			glm::uvec2(width, height),
 			glm::vec3(0),
@@ -196,6 +221,16 @@ int main(int argc, char** argv)
 			octree_buffer_size,
 			0
 		);
+
+		// Render scene
+		if (scene)
+		{
+			scene_renderer.render(
+				camera.projection() * camera.view(),
+				glm::mat4(1),
+				*scene
+			);
+		}
 
 		// Swap
 		glfwSwapBuffers(window);

@@ -29,25 +29,6 @@ void assert(bool test)
 	}
 }
 
-void fix_position(inout uvec3 pos)
-{
-	switch (g_axis)
-	{
-		case 0: // X
-			pos.xyz = pos.zyx;
-			break;
-		case 1: // Y
-			pos.xyz = pos.xzy;
-			break;
-		case 2: // Z
-			pos.xyz = uvec3(pos.xy, u_viewport - pos.z);
-			break;
-		default:
-			assert(false);
-			break;
-	}
-}
-
 bool is_inside_grid(uvec3 pos)
 {
 	return pos.x < u_grid.x && pos.y < u_grid.y && pos.z < u_grid.z;
@@ -65,44 +46,30 @@ void push_voxel(uvec3 pos, vec4 col)
 
 void main()
 {
-	uint u_block_resolution = 2; // TODO take from extern
-
 	uvec3 pos = uvec3(gl_FragCoord.xy, gl_FragCoord.z * u_viewport);
-	fix_position(pos);
+
+	switch (g_axis)
+	{
+		case 0: // X
+			pos.xyz = pos.zyx;
+			break;
+		case 1: // Y
+			pos.xyz = pos.xzy;
+			break;
+		case 2: // Z
+			pos.xyz = uvec3(pos.xy, u_viewport - pos.z);
+			break;
+		default:
+			assert(false);
+			break;
+	}
 
 	// TODO color could be calculated better
 	// TODO uv y is inverted
 	vec4 col = g_color * u_color * texture(u_texture2d, vec2(g_uv.x, 1 - g_uv.y));
 
-	vec3 dir = -g_normal;
-
-	vec3 t_max = vec3(0);
-	vec3 t_delta = vec3(1) / vec3(dir);
-	ivec3 t_step = ivec3(sign(dir));
-
-	for (int i = 0; i < 10; i++)
+	if (is_inside_grid(pos))
 	{
-		if (is_inside_grid(pos))
-		{
-			push_voxel(pos, col);
-		}
-
-		if (t_max.x < t_max.y) {
-			if (t_max.x < t_max.z) {
-				pos.x += t_step.x;
-				t_max.x += t_delta.x;
-			} else {
-				pos.z += t_step.z;
-				t_max.z += t_delta.z;
-			}
-		} else {
-			if (t_max.y < t_max.z) {
-				pos.y += t_step.y;
-				t_max.y += t_delta.y;
-			} else {
-				pos.z += t_step.z;
-				t_max.z += t_delta.z;
-			}
-		}
+		push_voxel(pos, col);
 	}
 }
