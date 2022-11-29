@@ -1,42 +1,43 @@
 
 set(SRC
-	src/util/camera.cpp
-	src/util/camera.hpp
-	src/util/gl.cpp
-	src/util/gl.hpp
-	src/util/radix_sort.hpp
-	src/util/render_doc.hpp
-	src/util/render_doc.cpp
-	src/util/screen_quad.cpp
-	src/util/screen_quad.hpp
-	src/util/std_integration.hpp
-	src/ai_scene_loader.cpp
-	src/ai_scene_loader.hpp
-	src/main.cpp
-	src/mesh.cpp
-	src/mesh.hpp
-	src/octree.cpp
-	src/octree.hpp
-	src/scene.hpp
-	src/voxelize.cpp
-	src/voxelize.hpp
-	src/voxel_list.cpp
-	src/voxel_list.hpp
+	voxelizer/util/camera.cpp
+	voxelizer/util/camera.hpp
+	voxelizer/util/gl.cpp
+	voxelizer/util/gl.hpp
+	voxelizer/util/radix_sort.hpp
+	voxelizer/util/render_doc.cpp
+	voxelizer/util/render_doc.hpp
+	voxelizer/util/screen_quad.cpp
+	voxelizer/util/screen_quad.hpp
+	voxelizer/util/std_integration.hpp
+	voxelizer/ai_scene_loader.cpp
+	voxelizer/ai_scene_loader.hpp
+	voxelizer/mesh.cpp
+	voxelizer/mesh.hpp
+	voxelizer/octree.cpp
+	voxelizer/octree.hpp
+	voxelizer/octree_builder.cpp
+	voxelizer/octree_builder.hpp
+	voxelizer/scene.hpp
+	voxelizer/voxel_list.cpp
+	voxelizer/voxel_list.hpp
+	voxelizer/voxelize.cpp
+	voxelizer/voxelize.hpp
 )
 
-add_executable(voxelizer ${SRC})
+add_library(voxelizer ${SRC})
 
 # ------------------------------------------------------------------------------------------------
 # Dependencies
 # ------------------------------------------------------------------------------------------------
 
-# assimp
-find_package(assimp CONFIG REQUIRED)
-target_link_libraries(voxelizer PUBLIC assimp::assimp)
-
 # GLM
 find_package(glm CONFIG REQUIRED)
 target_link_libraries(voxelizer PUBLIC glm::glm)
+
+# assimp
+find_package(assimp CONFIG REQUIRED)
+target_link_libraries(voxelizer PUBLIC assimp::assimp)
 
 # libzip
 find_package(libzip CONFIG REQUIRED)
@@ -57,9 +58,9 @@ target_link_libraries(voxelizer PUBLIC glfw)
 # glad
 target_sources(voxelizer
     PUBLIC
-	${CMAKE_SOURCE_DIR}/third_party/glad/src/glad.c
-	${CMAKE_SOURCE_DIR}/third_party/glad/include/glad/glad.h
-	${CMAKE_SOURCE_DIR}/third_party/glad/include/KHR/khrplatform.h
+        ${CMAKE_SOURCE_DIR}/third_party/glad/src/glad.c
+        ${CMAKE_SOURCE_DIR}/third_party/glad/include/glad/glad.h
+        ${CMAKE_SOURCE_DIR}/third_party/glad/include/KHR/khrplatform.h
 )
 target_include_directories(voxelizer PUBLIC ${CMAKE_SOURCE_DIR}/third_party/glad/include)
 
@@ -70,20 +71,7 @@ target_include_directories(voxelizer PUBLIC ${CMAKE_SOURCE_DIR}/third_party/rend
 # Embed resources
 # ------------------------------------------------------------------------------------------------
 
-# shinji
-include(FetchContent)
-message(STATUS "Fetching shinji...")
-FetchContent_Declare(
-    shinji
-    GIT_REPOSITORY "https://github.com/loryruta/shinji"
-)
-FetchContent_MakeAvailable(shinji)
-include("${shinji_SOURCE_DIR}/shinji.cmake")
-
 shinji_embed(voxelizer
-	resources/shaders/phong.frag
-	resources/shaders/scene.vert
-	resources/shaders/screen_quad.vert
 	resources/shaders/svo_node_alloc.comp
 	resources/shaders/svo_node_flag.comp
 	resources/shaders/svo_node_init.comp
@@ -94,3 +82,11 @@ shinji_embed(voxelizer
 	resources/shaders/voxelize.vert
 )
 shinji_finalize(voxelizer)
+
+# ------------------------------------------------------------------------------------------------
+# Executable
+# ------------------------------------------------------------------------------------------------
+
+add_executable(voxelizer_exec voxelizer/main.cpp)
+
+target_link_libraries(voxelizer_exec PRIVATE voxelizer)

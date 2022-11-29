@@ -58,20 +58,18 @@ void Shader::source_from_file(const GLchar* path)
 	this->source_from_string(string.c_str());
 }
 
-bool Shader::compile()
+void Shader::compile()
 {
 	glCompileShader(this->id);
 
-	GLint status;
+	GLint status{};
 	glGetShaderiv(this->id, GL_COMPILE_STATUS, &status);
 
 	if (status == GL_FALSE)
 	{
 		std::cerr << get_log() << std::endl;
-		throw std::runtime_error("Shader failed to compile. See logs in console.");
+		throw std::runtime_error("Shader failed to compile. See logs in console");
 	}
-
-	return true;
 }
 
 std::string Shader::get_log()
@@ -109,20 +107,18 @@ void Program::detach_shader(const Shader& shader)
 	glDetachShader(this->id, shader.id);
 }
 
-bool Program::link()
+void Program::link()
 {
 	glLinkProgram(this->id);
 
-	GLint status;
+	GLint status{};
 	glGetProgramiv(this->id, GL_LINK_STATUS, &status);
 
 	if (status == GL_FALSE)
 	{
 		std::cerr << get_log() << std::endl;
-		throw std::runtime_error("Program failed to compile. See logs on console.");
+		throw std::runtime_error("Program failed to compile. See logs on console");
 	}
-
-	return true;
 }
 
 void Program::use()

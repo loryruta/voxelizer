@@ -10,7 +10,7 @@ namespace voxelizer
 	struct scene
 	{
 		glm::vec3 m_transformed_min, m_transformed_max;
-		std::vector<std::shared_ptr<Mesh>> m_meshes;
+		std::vector<Mesh> m_meshes;
 
 		inline glm::vec3 get_transformed_size() const
 		{
@@ -19,11 +19,12 @@ namespace voxelizer
 
 		inline size_t get_triangles_count()
 		{
-			size_t num_of_triangles = 0;
-			for (auto const& mesh : m_meshes) {
-				num_of_triangles += mesh->m_num_of_triangles;
+			size_t triangle_count = 0;
+			for (Mesh const& mesh : m_meshes)
+			{
+				triangle_count += mesh.m_triangle_count;
 			}
-			return num_of_triangles;
+			return triangle_count;
 		}
 	};
 }

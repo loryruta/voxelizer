@@ -35,7 +35,7 @@ struct Shader
 	void source_from_string(const GLchar* source);
 	void source_from_file(const GLchar* path);
 
-	bool compile();
+	void compile();
 	std::string get_log();
 };
 
@@ -55,7 +55,7 @@ struct Program
 	void attach_shader(const Shader& shader);
 	void detach_shader(const Shader& shader);
 
-	bool link();
+	void link();
 
 	void use();
 	static void unuse();

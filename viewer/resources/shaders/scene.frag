@@ -10,5 +10,5 @@ out vec4 f_color;
 
 void main()
 {
-	f_color = u_color * v_color * texture(u_texture2d, vec2(v_tex_coord.x, 1 - v_tex_coord.y)); // todo why the y inverted?
+	f_color = u_color * v_color * texture(u_texture2d, vec2(v_tex_coord.x, 1 - v_tex_coord.y));
 }

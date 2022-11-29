@@ -3,11 +3,10 @@
 #include <iostream>
 
 #include <glm/gtc/type_ptr.hpp>
-
 #include <shinji.hpp>
 
-#include "voxel_list.hpp"
 #include "util/render_doc.hpp"
+#include "voxel_list.hpp"
 
 voxelizer::voxelize::voxelize()
 {
@@ -64,22 +63,22 @@ void voxelizer::voxelize::create_projection_matrices(glm::mat4 m[3])
 
 void voxelizer::voxelize::invoke(voxelizer::scene const& scene)
 {
-	for (std::shared_ptr<Mesh> const& mesh : scene.m_meshes)
+	for (Mesh const& mesh : scene.m_meshes)
 	{
 		// todo better pbr rendering
 
 		// Transform
-		glUniformMatrix4fv(m_program.get_uniform_location("u_mesh_transform"), 1, GL_FALSE, glm::value_ptr(mesh->transform));
+		glUniformMatrix4fv(m_program.get_uniform_location("u_mesh_transform"), 1, GL_FALSE, glm::value_ptr(mesh.m_transform));
 
 		// Color
-		glm::vec4 color = mesh->material->get_color(Material::Type::DIFFUSE);
+		glm::vec4 color = mesh.m_material->get_color(Material::Type::DIFFUSE);
 		glUniform4fv(m_program.get_uniform_location("u_color"), 1, glm::value_ptr(color));
 
-		GLuint texture = mesh->material->get_texture(Material::Type::DIFFUSE);
+		GLuint texture = mesh.m_material->get_texture(Material::Type::DIFFUSE);
 		glBindTexture(GL_TEXTURE_2D, texture);
 
-		glBindVertexArray(mesh->vao);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
+		glBindVertexArray(mesh.m_vao);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.m_ebo);
 
 		// Reset errors counter
 		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, m_errors_counter);
@@ -87,9 +86,9 @@ void voxelizer::voxelize::invoke(voxelizer::scene const& scene)
 
 		glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 4, m_errors_counter);
 
-		//rgc::renderdoc::watch(false, [&] { TODO
-			glDrawElements(GL_TRIANGLES, (GLsizei) mesh->elements_count, GL_UNSIGNED_INT, nullptr);
-		//});
+		rgc::renderdoc::watch(true, [&] {
+			glDrawElements(GL_TRIANGLES, (GLsizei) mesh.m_element_count, GL_UNSIGNED_INT, nullptr);
+		});
 
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
 
@@ -110,6 +109,9 @@ void voxelizer::voxelize::invoke(voxelizer::scene const& scene)
 
 void voxelizer::voxelize::operator()(voxelizer::VoxelList& voxel_list, scene const& scene, uint32_t voxels_on_y, glm::vec3 area_position, glm::vec3 area_size)
 {
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_ALPHA_TEST);
+
 	m_program.use();
 
 	// Prepares a matrix responsible of framing the model in the said area.

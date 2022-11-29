@@ -56,23 +56,24 @@ struct Mesh
 		size
 	};
 
+	bool m_valid = true;
+
+	GLuint m_vao;
+	std::array<GLuint, Mesh::Attribute::size> m_vbos;
+	GLuint m_ebo;
+
+	size_t m_triangle_count;
+	size_t m_element_count;
+
+	glm::mat4 m_transform;
+
+	std::shared_ptr<Material> m_material;
+
 	glm::vec3 m_transformed_min, m_transformed_max;
-	size_t m_num_of_triangles = 0;
-
-	const GLuint vao;
-	const std::array<GLuint, Mesh::Attribute::size> vbo;
-
-	const GLuint ebo;
-	size_t elements_count;
-
-	glm::mat4 transform;
-
-	std::shared_ptr<Material> material;
 
 	Mesh();
-
-	Mesh(const Mesh&) = delete;
-	Mesh(const Mesh&&) = delete;
+	Mesh(Mesh const&) = delete;
+	Mesh(Mesh&& other) noexcept;
 
 	~Mesh();
 };

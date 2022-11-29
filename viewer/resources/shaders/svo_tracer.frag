@@ -271,8 +271,9 @@ void main()
 	vec3 hit_pos = ray.origin + ray.direction * t_hit;
 	vec4 cs_hit_pos = u_projection * u_view * vec4(hit_pos, 1.0); // Hit position in clip space
 	gl_FragDepth = (cs_hit_pos.z / cs_hit_pos.w) / 2 + 0.5;
-
-	if (!hit) {
+	
+	if (!hit)
+	{
 		discard;
 	}
 
