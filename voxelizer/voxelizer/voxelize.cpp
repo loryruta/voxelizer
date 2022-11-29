@@ -109,6 +109,9 @@ void voxelizer::voxelize::invoke(voxelizer::scene const& scene)
 
 void voxelizer::voxelize::operator()(voxelizer::VoxelList& voxel_list, scene const& scene, uint32_t voxels_on_y, glm::vec3 area_position, glm::vec3 area_size)
 {
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_ALPHA_TEST);
+
 	m_program.use();
 
 	// Prepares a matrix responsible of framing the model in the said area.

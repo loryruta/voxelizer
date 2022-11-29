@@ -5,6 +5,7 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <voxelizer/util/camera.hpp>
 #include <voxelizer/ai_scene_loader.hpp>
@@ -170,6 +171,18 @@ int main(int argc, char** argv)
 		scene_loader.load(*scene, *model_file);
 	}
 
+	// Calc octree position
+	glm::vec3 octree_min = glm::vec3(0);
+	glm::vec3 octree_max = glm::vec3(1);
+
+	glm::mat4 scene_transform{};
+	if (scene)
+	{
+		scene_transform = glm::identity<glm::mat4>();
+		scene_transform = glm::scale(scene_transform, glm::vec3(1) / (octree_max - octree_min));
+		scene_transform = glm::translate(scene_transform, -scene->m_transformed_min);
+	}
+
 	// Main loop
 	printf("Starting loop\n");
 
@@ -241,7 +254,7 @@ int main(int argc, char** argv)
 		{
 			scene_renderer.render(
 				camera.projection() * camera.view(),
-				glm::mat4(1),
+				scene_transform,
 				*scene
 			);
 		}
