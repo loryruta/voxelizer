@@ -17,7 +17,8 @@ namespace voxelizer
 		scene_renderer();
 
 		void render(
-			glm::mat4 const& camera,
+			glm::mat4 const& camera_projection,
+			glm::mat4 const& camera_view,
 			glm::mat4 const& transform,
 			voxelizer::scene const& scene
 		);

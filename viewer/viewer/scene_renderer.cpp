@@ -24,7 +24,8 @@ voxelizer::scene_renderer::scene_renderer()
 }
 
 void voxelizer::scene_renderer::scene_renderer::render(
-	glm::mat4 const& camera,
+	glm::mat4 const& camera_projection,
+	glm::mat4 const& camera_view,
 	glm::mat4 const& transform,
 	voxelizer::scene const& scene
 )
@@ -33,7 +34,9 @@ void voxelizer::scene_renderer::scene_renderer::render(
 
 	m_program.use();
 
-	glUniformMatrix4fv(m_program.get_uniform_location("u_camera"), 1, GL_FALSE, glm::value_ptr(camera));
+	glUniformMatrix4fv(m_program.get_uniform_location("u_camera_projection"), 1, GL_FALSE, glm::value_ptr(camera_projection));
+	glUniformMatrix4fv(m_program.get_uniform_location("u_camera_view"), 1, GL_FALSE, glm::value_ptr(camera_view));
+
 	glUniformMatrix4fv(m_program.get_uniform_location("u_scene_transform"), 1, GL_FALSE, glm::value_ptr(transform));
 
 	for (auto& mesh : scene.m_meshes)

@@ -167,8 +167,12 @@ int main(int argc, char** argv)
 	{
 		voxelizer::assimp_scene_loader scene_loader{};
 
+		printf("Loading scene: \"%s\"\n", model_file->u8string().c_str());
+
 		scene = voxelizer::scene{};
 		scene_loader.load(*scene, *model_file);
+
+		printf("Scene loaded\n");
 	}
 
 	// Calc octree position
@@ -179,8 +183,8 @@ int main(int argc, char** argv)
 	if (scene)
 	{
 		scene_transform = glm::identity<glm::mat4>();
-		scene_transform = glm::scale(scene_transform, glm::vec3(1) / (octree_max - octree_min));
-		scene_transform = glm::translate(scene_transform, -scene->m_transformed_min);
+		scene_transform = glm::scale(scene_transform, glm::vec3(1) / (scene->m_transformed_max - scene->m_transformed_min).y);
+		scene_transform = glm::translate(scene_transform, -scene->m_transformed_min + octree_min);
 	}
 
 	// Main loop
@@ -253,7 +257,8 @@ int main(int argc, char** argv)
 		if (g_show_scene && scene)
 		{
 			scene_renderer.render(
-				camera.projection() * camera.view(),
+				camera.projection(),
+				camera.view(),
 				scene_transform,
 				*scene
 			);

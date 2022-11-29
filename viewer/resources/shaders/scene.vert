@@ -7,14 +7,15 @@ layout(location = 3) in vec4 color;
 
 uniform mat4 u_scene_transform;
 uniform mat4 u_transform;
-uniform mat4 u_camera;
+uniform mat4 u_camera_projection;
+uniform mat4 u_camera_view;
 
 out vec2 v_tex_coord;
 out vec4 v_color;
 
 void main()
 {
-	gl_Position = u_camera * u_scene_transform * u_transform * vec4(position, 1.0);
+	gl_Position = u_camera_projection * u_camera_view * u_scene_transform * u_transform * vec4(position, 1.0);
 	v_tex_coord = tex_coord;
 	v_color = color;
 }

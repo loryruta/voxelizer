@@ -65,8 +65,6 @@ void voxelizer::voxelize::invoke(voxelizer::scene const& scene)
 {
 	for (Mesh const& mesh : scene.m_meshes)
 	{
-		// todo better pbr rendering
-
 		// Transform
 		glUniformMatrix4fv(m_program.get_uniform_location("u_mesh_transform"), 1, GL_FALSE, glm::value_ptr(mesh.m_transform));
 
