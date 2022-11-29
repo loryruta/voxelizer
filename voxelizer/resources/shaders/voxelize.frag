@@ -10,7 +10,7 @@ flat in int g_axis;
 layout (pixel_center_integer) in vec4 gl_FragCoord;
 
 layout(location = 6) uniform vec4 u_color;
-layout(location = 7, binding = 0) uniform sampler2D u_texture2d;
+layout(location = 7) uniform sampler2D u_texture2d;
 
 uniform uint u_viewport;
 uniform uvec3 u_grid;
