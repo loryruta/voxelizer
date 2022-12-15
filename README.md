@@ -1,6 +1,6 @@
 # voxelizer
 
-A tool, and a library, that converts a 3D model to a 3D volume, represented as a Sparse Voxel Octree. Written in modern OpenGL.
+An OpenGL-based tool, and a library, that converts a 3D model to a 3D volume, represented as a Sparse Voxel Octree.
 
 ![Preview](gallery/img2.png)
 
