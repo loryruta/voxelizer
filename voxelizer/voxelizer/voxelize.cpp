@@ -12,17 +12,17 @@ voxelizer::voxelize::voxelize()
 {
 	// Program
 	Shader vertex(GL_VERTEX_SHADER);
-	vertex.source_from_string(shinji::load_resource_from_bundle("resources/shaders/voxelize.vert").first);
+	vertex.source_from_string(shinji::load_resource_from_bundle("resources/shaders/voxelize.vert").m_data);
 	vertex.compile();
 	m_program.attach_shader(vertex);
 
 	Shader geometry(GL_GEOMETRY_SHADER);
-	geometry.source_from_string(shinji::load_resource_from_bundle("resources/shaders/voxelize.geom").first);
+	geometry.source_from_string(shinji::load_resource_from_bundle("resources/shaders/voxelize.geom").m_data);
 	geometry.compile();
 	m_program.attach_shader(geometry);
 
 	Shader fragment(GL_FRAGMENT_SHADER);
-	fragment.source_from_string(shinji::load_resource_from_bundle("resources/shaders/voxelize.frag").first);
+	fragment.source_from_string(shinji::load_resource_from_bundle("resources/shaders/voxelize.frag").m_data);
 	fragment.compile();
 	m_program.attach_shader(fragment);
 
@@ -63,8 +63,12 @@ void voxelizer::voxelize::create_projection_matrices(glm::mat4 m[3])
 
 void voxelizer::voxelize::invoke(voxelizer::scene const& scene)
 {
-	for (Mesh const& mesh : scene.m_meshes)
+	size_t voxel_list_offset = 0;
+
+	for (uint32_t mesh_idx = 0; mesh_idx < scene.m_meshes.size(); mesh_idx++)
 	{
+		Mesh const& mesh = scene.m_meshes[mesh_idx];
+
 		// Transform
 		glUniformMatrix4fv(m_program.get_uniform_location("u_mesh_transform"), 1, GL_FALSE, glm::value_ptr(mesh.m_transform));
 
@@ -84,31 +88,43 @@ void voxelizer::voxelize::invoke(voxelizer::scene const& scene)
 
 		glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 4, m_errors_counter);
 
-		rgc::renderdoc::watch(true, [&] {
+		rgc::renderdoc::watch(true, [&]
+		{
 			glDrawElements(GL_TRIANGLES, (GLsizei) mesh.m_element_count, GL_UNSIGNED_INT, nullptr);
 		});
 
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
 
-		GLuint errors_count;
+		size_t current_voxel_list_offset = m_atomic_counter.get_value();
+
+		printf("[voxelize] Mesh %d voxelized, voxels: %zu, offset: %zu\n",
+			mesh_idx,
+			(current_voxel_list_offset - voxel_list_offset),
+			current_voxel_list_offset
+		);
+
+		voxel_list_offset = current_voxel_list_offset;
+
+		GLuint errors_count{};
 		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, m_errors_counter);
 		glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &errors_count);
 
 		if (errors_count > 0)
 		{
-			fprintf(stderr, "[scene_voxelizer] Errors: %d\n", errors_count);
+			fprintf(stderr, "[voxelize] Errors: %d\n", errors_count);
 			fflush(stderr);
 		}
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
 	}
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 void voxelizer::voxelize::operator()(voxelizer::VoxelList& voxel_list, scene const& scene, uint32_t voxels_on_y, glm::vec3 area_position, glm::vec3 area_size)
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_ALPHA_TEST);
+	glDisable(GL_CULL_FACE);
 
 	m_program.use();
 
@@ -138,6 +154,8 @@ void voxelizer::voxelize::operator()(voxelizer::VoxelList& voxel_list, scene con
 
 	glUniform3uiv(m_program.get_uniform_location("u_grid"), 1, glm::value_ptr(grid));
 
+	printf("[voxelize] Viewport of size (%d, %d)\n", max_side, max_side);
+
 	glViewport(0, 0, (GLsizei) max_side, (GLsizei) max_side);
 
 	// COUNT
@@ -146,16 +164,14 @@ void voxelizer::voxelize::operator()(voxelizer::VoxelList& voxel_list, scene con
 
 	glUniform1ui(m_program.get_uniform_location("u_can_store"), 0);
 
-	AtomicCounter voxel_counter;
-	voxel_counter.set_value(0);
-	voxel_counter.bind(3);
+	m_atomic_counter.set_value(0);
+	m_atomic_counter.bind(3);
 
 	invoke(scene);
 
-	GLuint voxel_count = voxel_counter.get_value();
+	GLuint voxel_count = m_atomic_counter.get_value();
 
-	printf("Allocating %d voxels for scene voxelization (~%zu bytes)...\n", voxel_count, voxel_count * sizeof(GLuint) * 2);
-	fflush(stdout);
+	printf("[voxelize] Allocating a voxel-list of %d (~%zu bytes)\n", voxel_count, voxel_count * sizeof(GLuint) * 2);
 
 	voxel_list.alloc(voxel_count);
 
@@ -164,14 +180,16 @@ void voxelizer::voxelize::operator()(voxelizer::VoxelList& voxel_list, scene con
 
 	glUniform1ui(m_program.get_uniform_location("u_can_store"), 1);
 
-	voxel_counter.set_value(0);
-	voxel_counter.bind(3);
+	m_atomic_counter.set_value(0);
+	m_atomic_counter.bind(3);
 
 	voxel_list.bind(1, 2);
 
 	invoke(scene);
 
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+	printf("[voxelize] Voxel-list stored\n");
 
 	//
 

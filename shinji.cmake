@@ -34,13 +34,10 @@ if (DEFINED SHINJI_GENERATE_EMBEDDABLE_CPP_FILE)
         string(REGEX REPLACE "${cleanup_re}" "${cleanup_sub}" chars "${chars}")
     endif()
     string(CONFIGURE [[
-namespace shinji
+namespace ${NAMESPACE}::shinji
 {
-    namespace bundle
-    {
-        extern const char ${SYMBOL_NAME}[] = { @chars@ 0 };
-        extern const size_t ${SYMBOL_NAME}_size = @n_bytes@;
-    }
+    extern const char ${SYMBOL_NAME}[] = { @chars@ 0 };
+    extern const size_t ${SYMBOL_NAME}_size = @n_bytes@;
 }
 ]] code)
     file(WRITE "${OUTPUT_FILE}" "${code}")
@@ -164,7 +161,7 @@ function (shinji_validate_glsl TARGET SHADER)
 
     target_sources(${SHINJI_LIB} PRIVATE ${VALIDATION_RULE})
 
-    _shinji_log(${TARGET} STATUS "Validate GLSL: ${SHADER}")
+    _shinji_log(${TARGET} STATUS "Validating GLSL: ${SHADER}")
 endfunction()
 
 
@@ -191,11 +188,11 @@ function (shinji_compile_glsl_to_spirv TARGET GLSL_SHADER SPIRV_SHADER)
 
     target_sources(${TARGET} INTERFACE ${SPIRV_SHADER})
 
-    _shinji_log(${TARGET} STATUS "Compile GLSL to SPIR-V: ${GLSL_SHADER_PATH} -> ${SPIRV_SHADER_PATH}")
+    _shinji_log(${TARGET} STATUS "Compiling GLSL to SPIR-V: ${GLSL_SHADER_PATH} -> ${SPIRV_SHADER_PATH}")
 endfunction()
 
 
-function (shinji_embed TARGET)
+function (shinji_embed TARGET NAMESPACE)
     cmake_parse_arguments(ARG "" "" "" "${ARGN}")
 
     _shinji_try_init(${TARGET} SHINJI_LIB)
@@ -212,30 +209,31 @@ function (shinji_embed TARGET)
                 OUTPUT ${EMBEDDED_CPP_FILE}
                 COMMAND ${CMAKE_COMMAND}
                     -DSHINJI_GENERATE_EMBEDDABLE_CPP_FILE=TRUE
+                    -DNAMESPACE=${NAMESPACE}
                     -DSYMBOL_NAME=${SYMBOL_NAME}
                     -DINPUT_FILE=${FILE}
                     -DOUTPUT_FILE=${EMBEDDED_CPP_FILE}
                     -P ${SHINJI_CMAKE}
                 MAIN_DEPENDENCY ${FILE}
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMENT "[shinji] Embedding file: ${FILE}"
+                COMMENT "[shinji] Embedding file ${FILE} into ${EMBEDDED_CPP_FILE}"
         )
 
         target_sources(${SHINJI_LIB} PUBLIC ${EMBEDDED_CPP_FILE})
 
         set_property(
-                TARGET ${TARGET}
-                APPEND_STRING PROPERTY SHINJI_BUNDLED_RESOURCES_DECL_CODE
-                "extern char const ${SYMBOL_NAME}[];extern size_t const ${SYMBOL_NAME}_size;"
+            TARGET ${TARGET}
+            APPEND_STRING PROPERTY SHINJI_BUNDLED_RESOURCES_DECL_CODE
+            "namespace ${NAMESPACE}::shinji { extern char const ${SYMBOL_NAME}[]; extern size_t const ${SYMBOL_NAME}_size; }\n"
         )
 
         set_property(
-                TARGET ${TARGET}
-                APPEND_STRING PROPERTY SHINJI_BUNDLED_RESOURCES_REGISTRATION_CODE
-                "{\"${FILE}\", {shinji::bundle::${SYMBOL_NAME}, shinji::bundle::${SYMBOL_NAME}_size}},\n"
+            TARGET ${TARGET}
+            APPEND_STRING PROPERTY SHINJI_BUNDLED_RESOURCES_REGISTRATION_CODE
+            "{\"${FILE}\", {${NAMESPACE}::shinji::${SYMBOL_NAME}, ${NAMESPACE}::shinji::${SYMBOL_NAME}_size}},\n"
         )
 
-        _shinji_log(${TARGET} STATUS "Embed file: ${FILE}")
+        _shinji_log(${TARGET} STATUS "Embedding file ${FILE} into ${EMBEDDED_CPP_FILE}")
     endforeach()
 endfunction()
 
@@ -244,7 +242,7 @@ function (shinji_move TARGET SHADER)
 endfunction()
 
 
-function (shinji_finalize TARGET)
+function (shinji_finalize TARGET NAMESPACE)
     _shinji_log(${TARGET} STATUS "Finalizing...")
 
     _shinji_try_init(${TARGET} SHINJI_LIB)
@@ -272,20 +270,21 @@ function (shinji_finalize TARGET)
 #include <stdexcept>
 #include <fstream>
 
-namespace shinji
-{
-    namespace bundle
-    {
-        using resource_t = std::pair<char const*, size_t>;
-
 @SHINJI_BUNDLED_RESOURCES_DECL_CODE@
-    }
 
-    inline std::unordered_map<std::string, bundle::resource_t> s_bundled_resources{
+namespace @NAMESPACE@::shinji
+{
+    struct bundled_resource
+    {
+        char const* m_data;
+        size_t m_size;
+    };
+
+    inline std::unordered_map<std::string, bundled_resource> s_bundled_resources{
 @SHINJI_BUNDLED_RESOURCES_REGISTRATION_CODE@
     };
 
-    inline bundle::resource_t load_resource_from_bundle(char const* resource)
+    inline bundled_resource load_resource_from_bundle(char const* resource)
     {
         if (s_bundled_resources.find(resource) != s_bundled_resources.end()) {
             return s_bundled_resources.at(resource);
@@ -297,7 +296,8 @@ namespace shinji
     inline void load_resource_from_file(char const* resource, std::vector<char>& buf)
     {
         std::ifstream f(resource, std::ios::binary | std::ios::ate);
-        if (!f.is_open()) {
+        if (!f.is_open())
+        {
             throw std::runtime_error("Resource file not found");
         }
 
@@ -308,7 +308,7 @@ namespace shinji
         f.read(buf.data(), (std::streamsize) buf_len);
     }
 }
-    ]=] SHINJI_HPP_CONTENT @ONLY)
+]=] SHINJI_HPP_CONTENT @ONLY)
     file(GENERATE OUTPUT "${SHINJI_HPP}" CONTENT "${SHINJI_HPP_CONTENT}")
 
     target_sources(${SHINJI_LIB} PUBLIC ${SHINJI_HPP})

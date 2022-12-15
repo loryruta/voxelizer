@@ -9,12 +9,15 @@
 
 #include <voxelizer/util/camera.hpp>
 #include <voxelizer/ai_scene_loader.hpp>
+#include <voxelizer/voxelize.hpp>
+#include <voxelizer/octree_builder.hpp>
 
 #include "scene_renderer.hpp"
 #include "octree_tracer.hpp"
 
+bool g_show_scene = false;
 bool g_show_octree = true;
-bool g_show_scene  = false;
+int g_show_scene_projection = -1;
 
 void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* userParam)
 {
@@ -40,11 +43,17 @@ void on_key(GLFWwindow* window, int key, int scancode, int action, int mods)
 	}
 	else if (key == GLFW_KEY_F1 && action == GLFW_PRESS) // F1
 	{
-		g_show_octree = !g_show_octree;
+		g_show_scene_projection = -1;
+		g_show_scene = !g_show_scene;
 	}
 	else if (key == GLFW_KEY_F2 && action == GLFW_PRESS) // F2
 	{
-		g_show_scene = !g_show_scene;
+		g_show_scene_projection = -1;
+		g_show_octree = !g_show_octree;
+	}
+	else if ((key >= GLFW_KEY_1 && key <= GLFW_KEY_3) && action == GLFW_PRESS) // 1, 2, 3
+	{
+		g_show_scene_projection = key - GLFW_KEY_1;
 	}
 }
 
@@ -75,6 +84,76 @@ void process_freecam_movement_and_rotation(
 	float dy = (float) cursor_position_delta.x * k_rotation_speed * dt;
 
 	camera.offsetOrientation(dp, dy);
+}
+
+std::pair<GLuint, size_t> load_octree_from_file(char const* filename)
+{
+	printf("Loading octree at \"%s\"\n", filename);
+
+	GLuint octree_buffer{};
+	glGenBuffers(1, &octree_buffer);
+
+	std::ifstream input_file_stream(filename, std::ios::binary);
+
+	input_file_stream.seekg(0, std::ios::end);
+	size_t octree_buffer_size = input_file_stream.tellg();
+
+	printf("Octree size is %zu bytes ~ %.1f MB\n", octree_buffer_size, octree_buffer_size / (float)(1024 * 1024));
+
+	std::vector<char> octree_buffer_data(octree_buffer_size);
+
+	input_file_stream.clear();
+	input_file_stream.seekg(0);
+	input_file_stream.read(octree_buffer_data.data(), octree_buffer_size);
+
+	printf("Uploading octree on a GPU buffer\n");
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, octree_buffer);
+	glBufferStorage(GL_SHADER_STORAGE_BUFFER, octree_buffer_size, octree_buffer_data.data(), NULL);
+
+	return {
+		octree_buffer,
+		octree_buffer_size,
+	};
+}
+
+std::pair<GLuint, size_t> build_octree_from_scene(voxelizer::scene const& scene, uint32_t volume_height)
+{
+	voxelizer::voxelize voxelize{};
+	voxelizer::VoxelList voxel_list{};
+
+	glm::vec3 area_size = scene.get_transformed_size();
+	glm::uvec3 volume_size = voxelizer::voxelize::calc_proportional_grid(area_size, volume_height);
+	uint32_t max_volume_side = glm::max(glm::max(volume_size.x, volume_size.y), volume_size.z);
+
+	printf("Voxelizing scene - area size: (%.2f, %.2f, %.2f) volume: (%d, %d, %d), max side: %d\n",
+		area_size.x,
+		area_size.y,
+		area_size.z,
+		volume_size.x,
+		volume_size.y,
+		volume_size.z,
+		max_volume_side
+	);
+
+	voxelize(voxel_list, scene, volume_height, scene.m_transformed_min, scene.get_transformed_size());
+
+	voxelizer::octree_builder octree_builder{};
+	GLuint octree_buffer{};
+	uint32_t octree_resolution = (uint32_t)glm::ceil(glm::log2((float) max_volume_side));
+	size_t octree_bytesize = voxelizer::octree::get_octree_bytesize(octree_resolution);
+
+	glGenBuffers(1, &octree_buffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, octree_buffer);
+	glBufferStorage(GL_SHADER_STORAGE_BUFFER, octree_bytesize, NULL, NULL);
+
+	voxelizer::octree octree{};
+	octree_builder.build(voxel_list, octree_resolution, octree_buffer, 0, octree);
+
+	return {
+		octree_buffer,
+		octree_bytesize,
+	};
 }
 
 int main(int argc, char** argv)
@@ -138,54 +217,35 @@ int main(int argc, char** argv)
 	voxelizer::octree_tracer octree_tracer{};
 	voxelizer::scene_renderer scene_renderer{};
 
-	// Load octree
-	printf("Loading octree at \"%s\"\n", argv[0]);
-
-	GLuint octree_buffer{};
-	glGenBuffers(1, &octree_buffer);
-
-	std::ifstream input_file_stream(svo_file, std::ios::binary);
-
-	input_file_stream.seekg(0, std::ios::end);
-	size_t octree_buffer_size = input_file_stream.tellg();
-
-	printf("Octree size is %zu bytes ~ %.1f MB\n", octree_buffer_size, octree_buffer_size / (float) (1024 * 1024));
-
-	std::vector<char> octree_buffer_data(octree_buffer_size);
-
-	input_file_stream.seekg(0, std::ios::beg);
-	input_file_stream.read(octree_buffer_data.data(), octree_buffer_size);
-
-	printf("Uploading octree on a GPU buffer\n");
-
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, octree_buffer);
-	glBufferStorage(GL_SHADER_STORAGE_BUFFER, octree_buffer_size, octree_buffer_data.data(), NULL);
-
 	// Load scene
-	std::optional<voxelizer::scene> scene{};
-	if (model_file)
-	{
-		voxelizer::assimp_scene_loader scene_loader{};
+	voxelizer::scene scene{};
+	voxelizer::assimp_scene_loader scene_loader{};
 
-		printf("Loading scene: \"%s\"\n", model_file->u8string().c_str());
+	printf("Loading scene: \"%s\"\n", model_file->u8string().c_str());
 
-		scene = voxelizer::scene{};
-		scene_loader.load(*scene, *model_file);
+	scene_loader.load(scene, *model_file);
 
-		printf("Scene loaded\n");
-	}
+	printf("Scene loaded\n");
+
+	// Load octree
+	auto [octree_buffer, octree_buffer_size] = load_octree_from_file(argv[0]);
 
 	// Calc octree position
 	glm::vec3 octree_min = glm::vec3(0);
 	glm::vec3 octree_max = glm::vec3(1);
 
 	glm::mat4 scene_transform{};
-	if (scene)
-	{
-		scene_transform = glm::identity<glm::mat4>();
-		scene_transform = glm::scale(scene_transform, glm::vec3(1) / (scene->m_transformed_max - scene->m_transformed_min).y);
-		scene_transform = glm::translate(scene_transform, -scene->m_transformed_min + octree_min);
-	}
+	glm::mat4 scene_normalization_matrix{};
+	glm::mat4 scene_projection_matrices[3]{};
+
+	scene_transform = glm::identity<glm::mat4>();
+	scene_transform = glm::scale(scene_transform, glm::vec3(1) / (scene.m_transformed_max - scene.m_transformed_min).y);
+	scene_transform = glm::translate(scene_transform, -scene.m_transformed_min + octree_min);
+
+	voxelizer::voxelize voxelize{};
+	scene_normalization_matrix =
+		voxelize.create_scene_normalization_matrix(scene.m_transformed_min, scene.m_transformed_max - scene.m_transformed_min);
+	voxelize.create_projection_matrices(scene_projection_matrices);
 
 	// Main loop
 	printf("Starting loop\n");
@@ -254,13 +314,24 @@ int main(int argc, char** argv)
 		}
 
 		// Render scene
-		if (g_show_scene && scene)
+		if (g_show_scene)
 		{
 			scene_renderer.render(
 				camera.projection(),
 				camera.view(),
 				scene_transform,
-				*scene
+				scene
+			);
+		}
+
+		// Render scene projections
+		if (g_show_scene_projection >= 0)
+		{
+			scene_renderer.render(
+				scene_projection_matrices[g_show_scene_projection],
+				glm::mat4(1),
+				scene_normalization_matrix,
+				scene
 			);
 		}
 

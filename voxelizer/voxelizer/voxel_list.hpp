@@ -17,4 +17,3 @@ namespace voxelizer
 		void bind(GLuint position_binding, GLuint color_binding) const;
 	};
 }
-

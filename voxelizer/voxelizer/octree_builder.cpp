@@ -6,14 +6,12 @@
 
 #include "util/render_doc.hpp"
 
-// ------------------------------------------------------------------------------------------------ octree_builder
-
 voxelizer::octree_builder::octree_builder()
 {
 	// node_flag
 	{
 		Shader shader(GL_COMPUTE_SHADER);
-		shader.source_from_string(shinji::load_resource_from_bundle("resources/shaders/svo_node_flag.comp").first);
+		shader.source_from_string(shinji::load_resource_from_bundle("resources/shaders/svo_node_flag.comp").m_data);
 		shader.compile();
 
 		m_node_flag.attach_shader(shader);
@@ -23,7 +21,7 @@ voxelizer::octree_builder::octree_builder()
 	// node_alloc
 	{
 		Shader shader(GL_COMPUTE_SHADER);
-		shader.source_from_string(shinji::load_resource_from_bundle("resources/shaders/svo_node_alloc.comp").first);
+		shader.source_from_string(shinji::load_resource_from_bundle("resources/shaders/svo_node_alloc.comp").m_data);
 		shader.compile();
 
 		m_node_alloc.attach_shader(shader);
@@ -33,7 +31,7 @@ voxelizer::octree_builder::octree_builder()
 	// node_init
 	{
 		Shader shader(GL_COMPUTE_SHADER);
-		shader.source_from_string(shinji::load_resource_from_bundle("resources/shaders/svo_node_init.comp").first);
+		shader.source_from_string(shinji::load_resource_from_bundle("resources/shaders/svo_node_init.comp").m_data);
 		shader.compile();
 
 		m_node_init.attach_shader(shader);
@@ -43,7 +41,7 @@ voxelizer::octree_builder::octree_builder()
 	// store_leaf
 	{
 		Shader shader(GL_COMPUTE_SHADER);
-		shader.source_from_string(shinji::load_resource_from_bundle("resources/shaders/svo_store_leaf.comp").first);
+		shader.source_from_string(shinji::load_resource_from_bundle("resources/shaders/svo_store_leaf.comp").m_data);
 		shader.compile();
 
 		m_store_leaf.attach_shader(shader);
@@ -53,6 +51,8 @@ voxelizer::octree_builder::octree_builder()
 
 void voxelizer::octree_builder::clear(voxelizer::octree const& octree, uint32_t start, uint32_t count)
 {
+	printf("[octree_builder] Clearing - start: %d, count: %d\n", start, count);
+
 	m_node_init.use();
 
 	glUniform1ui(m_node_init.get_uniform_location("u_start"), start);
@@ -91,6 +91,8 @@ void voxelizer::octree_builder::build(
 
 	for (int level = 1; level < resolution; level++)
 	{
+		printf("[octree_builder] Level: %d\n", level);
+
 		// node flag
 		m_node_flag.use();
 
@@ -104,6 +106,8 @@ void voxelizer::octree_builder::build(
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 		Program::unuse();
+
+		printf("[octree_builder] Flagging - max_level: %d, level: %d, octree offset: %zu, octree size: %zu\n", octree.m_resolution, level, octree.m_offset, octree.get_bytesize());
 
 		// node alloc
 		m_node_alloc.use();
@@ -130,6 +134,14 @@ void voxelizer::octree_builder::build(
 		count = alloc_count * 8;
 		alloc_start = start + count;
 
+		printf("[octree_builder] Node alloc - start: %d, count: %d, alloc_start: %d, octree offset: %zu, octree size: %zu\n",
+			start,
+			count,
+			alloc_start,
+			octree.m_offset,
+			octree.get_bytesize()
+		);
+
 		// node init
 		clear(octree, start, count);
 	}
@@ -143,8 +155,18 @@ void voxelizer::octree_builder::build(
 	voxel_list.bind(2, 3);
 
 	int workgroup_count = glm::ceil(voxel_list.m_size / float(32));
-	glDispatchCompute(workgroup_count, 1, 1);
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+	rgc::renderdoc::watch(true, [&] {
+		glDispatchCompute(workgroup_count, 1, 1);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	});
+
+
+	printf("[octree_builder] Store leaves - max_level: %d, octree offset: %zu, octree size: %zu\n",
+		octree.m_resolution,
+		octree.m_offset,
+		octree.get_bytesize()
+	);
 
 	Program::unuse();
 }

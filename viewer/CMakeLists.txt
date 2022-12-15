@@ -13,8 +13,10 @@ add_executable(viewer_exec ${SRC})
 # Dependencies
 # ------------------------------------------------------------------------------------------------
 
+# Self
+target_include_directories(viewer_exec PUBLIC "${CMAKE_SOURCE_DIR}/viewer")
+
 # voxelizer
-target_include_directories(viewer_exec PUBLIC "${CMAKE_SOURCE_DIR}/voxelizer")
 target_link_libraries(viewer_exec PUBLIC voxelizer)
 
 # GLFW
@@ -25,10 +27,10 @@ target_link_libraries(viewer_exec PUBLIC glfw)
 # Embed resources
 # ------------------------------------------------------------------------------------------------
 
-shinji_embed(viewer_exec
+shinji_embed(viewer_exec "voxelizer::viewer"
 	resources/shaders/scene.frag
 	resources/shaders/scene.vert
 	resources/shaders/screen_quad.vert
 	resources/shaders/svo_tracer.frag
 )
-shinji_finalize(viewer_exec)
+shinji_finalize(viewer_exec "voxelizer::viewer")

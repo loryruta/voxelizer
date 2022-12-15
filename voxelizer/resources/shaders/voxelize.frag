@@ -70,6 +70,6 @@ void main()
 
 	if (is_inside_grid(pos))
 	{
-		push_voxel(pos, col);
+		push_voxel(pos, vec4(col.xyz, 1));
 	}
 }

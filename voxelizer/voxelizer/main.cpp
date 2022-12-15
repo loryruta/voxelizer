@@ -15,11 +15,24 @@
 
 void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* userParam)
 {
-	if (severity <= GL_DEBUG_SEVERITY_MEDIUM && type == GL_DEBUG_TYPE_ERROR)
+	if (severity <= GL_DEBUG_SEVERITY_MEDIUM && (type == GL_DEBUG_TYPE_ERROR || type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR))
 	{
 		fprintf(stderr, "GL CALLBACK: type = 0x%x, severity = 0x%x, message = %s\n", type, severity, message);
 		fflush(stderr);
 	}
+}
+
+bool is_little_endian()
+{
+	uint16_t test = 0x0001;
+	char* test_ptr = (char*)&test;
+	return test_ptr[0];
+}
+
+uint32_t swap_binary(uint32_t value)
+{
+	std::uint32_t tmp = ((value << 8) & 0xFF00FF00) | ((value >> 8) & 0xFF00FF);
+	return (tmp << 16) | (tmp >> 16);
 }
 
 void run_voxelizer(
@@ -44,7 +57,15 @@ void run_voxelizer(
 	glm::uvec3 volume_size = voxelizer::voxelize::calc_proportional_grid(area_size, volume_height);
 	uint32_t max_volume_side = glm::max(glm::max(volume_size.x, volume_size.y), volume_size.z);
 
-	printf("Voxelizing scene to a volume (%d, %d, %d)\n", volume_size.x, volume_size.y, volume_size.z);
+	printf("Voxelizing scene - area size: (%.2f, %.2f, %.2f) volume: (%d, %d, %d), max side: %d\n",
+		area_size.x,
+		area_size.y,
+		area_size.z,
+		volume_size.x,
+		volume_size.y,
+		volume_size.z,
+		max_volume_side
+	);
 
 	voxelize(voxel_list, scene, volume_height, scene.m_transformed_min, scene.get_transformed_size());
 
@@ -54,29 +75,34 @@ void run_voxelizer(
 	GLuint octree_buffer{};
 	uint32_t octree_resolution = (uint32_t) glm::ceil(glm::log2((float) max_volume_side));
 	size_t octree_bytesize = voxelizer::octree::get_octree_bytesize(octree_resolution);
-	voxelizer::octree octree{};
 
 	printf("Allocating an octree of resolution %d (%zu bytes ~ %.1f MB)\n", octree_resolution, octree_bytesize, ((float) octree_bytesize / (1024 * 1024)));
 
 	glGenBuffers(1, &octree_buffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, octree_buffer);
-	glBufferStorage(GL_SHADER_STORAGE_BUFFER, octree_bytesize, nullptr, GL_MAP_READ_BIT);
+	glBufferStorage(GL_SHADER_STORAGE_BUFFER, octree_bytesize, nullptr, NULL);
 
 	printf("Building the octree\n");
 
+	// Build the octree
+	voxelizer::octree octree{};
 	octree_builder.build(voxel_list, octree_resolution, octree_buffer, 0, octree);
 
+	// Download octree from GPU
+	std::vector<GLuint> octree_buffer_data(octree_bytesize / sizeof(GLuint));
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, octree_buffer);
+	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, octree_bytesize, octree_buffer_data.data());
+
+	// Write on file
 	printf("Writing to the output file \"%s\"\n", output_file_path.u8string().c_str());
 
-	glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
-
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, octree_buffer);
-
-	GLuint const* octree_buffer_ptr =
-		(GLuint const*) glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, octree_bytesize, GL_MAP_READ_BIT);
-
 	std::ofstream output_file_stream(output_file_path, std::ios::binary);
-	output_file_stream.write(reinterpret_cast<char const*>(octree_buffer_ptr), octree_bytesize);
+	uint32_t octree_length = octree_bytesize / sizeof(GLuint);
+	for (int i = 0; i < octree_buffer_data.size(); i++)
+	{
+		uint32_t value = is_little_endian() ? octree_buffer_data[i] : swap_binary(octree_buffer_data[i]);
+		output_file_stream.write((char*) &value, sizeof(GLuint));
+	}
 }
 
 int main(int argc, char* argv[])
@@ -121,7 +147,7 @@ int main(int argc, char* argv[])
 
 	glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-	GLFWwindow* window = glfwCreateWindow(23, 23 /* 23 is my favourite number :) Doesn't matter as it's a fake window */, "voxelizer", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(1024, 1024, "voxelizer", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
 	if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))

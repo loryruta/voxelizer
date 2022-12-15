@@ -17,6 +17,7 @@ namespace voxelizer
 
 	public:
 		Program m_program;
+		AtomicCounter m_atomic_counter;
 		GLuint m_errors_counter;
 
 		voxelize();

@@ -31,6 +31,9 @@ add_library(voxelizer ${SRC})
 # Dependencies
 # ------------------------------------------------------------------------------------------------
 
+# Self
+target_include_directories(voxelizer PUBLIC "${CMAKE_SOURCE_DIR}/voxelizer")
+
 # GLM
 find_package(glm CONFIG REQUIRED)
 target_link_libraries(voxelizer PUBLIC glm::glm)
@@ -71,7 +74,7 @@ target_include_directories(voxelizer PUBLIC ${CMAKE_SOURCE_DIR}/third_party/rend
 # Embed resources
 # ------------------------------------------------------------------------------------------------
 
-shinji_embed(voxelizer
+shinji_embed(voxelizer "voxelizer"
 	resources/shaders/svo_node_alloc.comp
 	resources/shaders/svo_node_flag.comp
 	resources/shaders/svo_node_init.comp
@@ -81,7 +84,7 @@ shinji_embed(voxelizer
 	resources/shaders/voxelize.geom
 	resources/shaders/voxelize.vert
 )
-shinji_finalize(voxelizer)
+shinji_finalize(voxelizer "voxelizer")
 
 # ------------------------------------------------------------------------------------------------
 # Executable
