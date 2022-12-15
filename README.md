@@ -4,6 +4,8 @@ An OpenGL-based tool, and a library, that converts a 3D model to a 3D volume, re
 
 ![Preview](gallery/img2.png)
 
+#### How did it born?
+
 This code was originally part of `mdmc`, another project of mine meant to convert a 3D model to a Minecraft schematic. I've decided to modularize this part
 as it could be useful for other tasks (and hopefully be useful to other people).
 
