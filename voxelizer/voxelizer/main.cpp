@@ -97,12 +97,22 @@ void run_voxelizer(
 	printf("Writing to the output file \"%s\"\n", output_file_path.u8string().c_str());
 
 	std::ofstream output_file_stream(output_file_path, std::ios::binary);
-	uint32_t octree_length = octree_bytesize / sizeof(GLuint);
-	for (int i = 0; i < octree_buffer_data.size(); i++)
+
+	auto writeU32 = [](std::ofstream& output, uint32_t value)
 	{
-		uint32_t value = is_little_endian() ? octree_buffer_data[i] : swap_binary(octree_buffer_data[i]);
-		output_file_stream.write((char*) &value, sizeof(GLuint));
-	}
+		value = is_little_endian() ? value : swap_binary(value);
+		output.write((char*) &value, sizeof(GLuint));
+	};
+
+	writeU32(output_file_stream, 0x01); // Version (?)
+	writeU32(output_file_stream, volume_size.x);
+	writeU32(output_file_stream, volume_size.y);
+	writeU32(output_file_stream, volume_size.z);
+	writeU32(output_file_stream, octree_resolution);
+	writeU32(output_file_stream, octree_bytesize);
+
+	for (int i = 0; i < octree_buffer_data.size(); i++)
+		writeU32(output_file_stream, octree_buffer_data[i]);
 }
 
 int main(int argc, char* argv[])
