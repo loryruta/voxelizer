@@ -123,4 +123,20 @@ namespace voxelizer
 
 		void flush(glm::mat4 const& view, glm::mat4 const& projection);
 	};
+
+	// ------------------------------------------------------------------------------------------------
+	// screen_quad
+	// ------------------------------------------------------------------------------------------------
+
+	class screen_quad
+	{
+	private:
+		GLuint m_vao, m_vbo;
+
+	public:
+		screen_quad();
+		~screen_quad();
+
+		void render();
+	};
 }

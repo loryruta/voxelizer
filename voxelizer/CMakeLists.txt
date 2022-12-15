@@ -2,8 +2,6 @@
 set(SRC
 	voxelizer/util/camera.cpp
 	voxelizer/util/camera.hpp
-	voxelizer/util/screen_quad.cpp
-	voxelizer/util/screen_quad.hpp
 	voxelizer/gl.cpp
 	voxelizer/gl.hpp
 	voxelizer/render_doc.cpp

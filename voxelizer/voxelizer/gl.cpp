@@ -382,3 +382,58 @@ void voxelizer::debug_renderer::flush(glm::mat4 const& proj_mtx, glm::mat4 const
 	m_lines.clear();
 	m_line_count = 0;
 }
+
+// ------------------------------------------------------------------------------------------------
+// screen_quad
+// ------------------------------------------------------------------------------------------------
+
+const GLfloat g_screen_quad_vertices[]{
+	-1.0f, -1.0f,
+	1.0f, -1.0f,
+	1.0f, 1.0f,
+	1.0f, 1.0f,
+	-1.0f, 1.0f,
+	-1.0f, -1.0f
+};
+
+voxelizer::screen_quad::screen_quad()
+{
+	// VBO
+	glGenBuffers(1, &m_vbo);
+
+	glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_screen_quad_vertices), g_screen_quad_vertices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// VAO
+	glGenVertexArrays(1, &m_vao);
+
+	glBindVertexArray(m_vao);
+	glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+
+	glEnableVertexArrayAttrib(m_vao, 0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), 0);
+
+	//
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+voxelizer::screen_quad::~screen_quad()
+{
+	glDeleteBuffers(1, &m_vbo);
+	glDeleteVertexArrays(1, &m_vao);
+}
+
+void voxelizer::screen_quad::render()
+{
+	glDisable(GL_CULL_FACE); // TODO
+
+	glBindVertexArray(m_vao);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	glBindVertexArray(0);
+}
+
