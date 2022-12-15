@@ -156,6 +156,12 @@ void voxelizer::voxelize::operator()(voxelizer::VoxelList& voxel_list, scene con
 
 	printf("[voxelize] Viewport of size (%d, %d)\n", max_side, max_side);
 
+	GLuint framebuffer{};
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+	glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_WIDTH, max_side);
+	glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_HEIGHT, max_side);
+
 	glViewport(0, 0, (GLsizei) max_side, (GLsizei) max_side);
 
 	// COUNT
@@ -194,4 +200,6 @@ void voxelizer::voxelize::operator()(voxelizer::VoxelList& voxel_list, scene con
 	//
 
 	Program::unuse();
+
+	glDeleteFramebuffers(1, &framebuffer);
 }

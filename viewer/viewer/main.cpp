@@ -299,6 +299,8 @@ int main(int argc, char** argv)
 		// Render octree
 		if (g_show_octree)
 		{
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 			octree_tracer.render(
 				glm::uvec2(width, height),
 				glm::vec3(0),
@@ -316,6 +318,8 @@ int main(int argc, char** argv)
 		// Render scene
 		if (g_show_scene)
 		{
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 			scene_renderer.render(
 				camera.projection(),
 				camera.view(),
@@ -327,6 +331,8 @@ int main(int argc, char** argv)
 		// Render scene projections
 		if (g_show_scene_projection >= 0)
 		{
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 			scene_renderer.render(
 				scene_projection_matrices[g_show_scene_projection],
 				glm::mat4(1),

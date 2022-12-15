@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
 
 	glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-	GLFWwindow* window = glfwCreateWindow(1024, 1024, "voxelizer", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(23, 23 /* We don't care about window dimension */, "voxelizer", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
 	if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
