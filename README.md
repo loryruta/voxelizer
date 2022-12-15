@@ -21,7 +21,16 @@ Where `model-file` is optional and can be used to compare the original model wit
 
 ## The octree format
 
-The output file consists of an array of little endian `uint32_t`, in binary format.
+The output file consists of an array of little endian `uint32_t`, in binary format, representing the following data:
+- The `version` of the format (should be 0x01)
+- The `volume_size.x`
+- The `volume_size.y`
+- The `volume_size.z`
+- The `octree_resolution` (could be derived from `volume_size`)
+- The `octree_bytesize`: the number of bytes reserved for the octree structure
+- The `octree`: the actual octree structure
+
+The `octree` structure consists of a set of levels one allocated after the other.
 
 The first 8 `uint32_t` correspond to the first octree level. Every value can be either:
 - A **parent node**: can be identified because the MSB is set. The remaining bits are the index of the first child node
