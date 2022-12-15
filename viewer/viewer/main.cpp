@@ -269,7 +269,11 @@ int main(int argc, char** argv)
 		glm::dvec2 cursor_position{};
 		glfwGetCursorPos(window, &cursor_position.x, &cursor_position.y);
 
-		if (dt > 0 && last_cursor_position)
+		if (
+			dt > 0 &&
+			last_cursor_position &&
+			glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED
+		)
 		{
 			process_freecam_movement_and_rotation(
 				window,
