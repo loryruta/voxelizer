@@ -2,22 +2,19 @@
 set(SRC
 	voxelizer/util/camera.cpp
 	voxelizer/util/camera.hpp
-	voxelizer/util/gl.cpp
-	voxelizer/util/gl.hpp
-	voxelizer/util/radix_sort.hpp
-	voxelizer/util/render_doc.cpp
-	voxelizer/util/render_doc.hpp
 	voxelizer/util/screen_quad.cpp
 	voxelizer/util/screen_quad.hpp
-	voxelizer/util/std_integration.hpp
+	voxelizer/gl.cpp
+	voxelizer/gl.hpp
+	voxelizer/render_doc.cpp
+	voxelizer/render_doc.hpp
 	voxelizer/ai_scene_loader.cpp
 	voxelizer/ai_scene_loader.hpp
-	voxelizer/mesh.cpp
-	voxelizer/mesh.hpp
 	voxelizer/octree.cpp
 	voxelizer/octree.hpp
 	voxelizer/octree_builder.cpp
 	voxelizer/octree_builder.hpp
+	voxelizer/scene.cpp
 	voxelizer/scene.hpp
 	voxelizer/voxel_list.cpp
 	voxelizer/voxel_list.hpp
