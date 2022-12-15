@@ -2,16 +2,17 @@
 
 #include <glad/glad.h>
 
-#include "util/gl.hpp"
+#include "gl.hpp"
 
 namespace voxelizer
 {
-	struct VoxelList
+	struct voxel_list
 	{
-		TextureBuffer position_buffer, color_buffer;
+		voxelizer::texture_buffer m_position_buffer;
+		voxelizer::texture_buffer m_color_buffer;
 		size_t m_size;
 
-		VoxelList();
+		voxel_list();
 
 		void alloc(size_t size);
 		void bind(GLuint position_binding, GLuint color_binding) const;

@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "util/render_doc.hpp"
+#include "render_doc.hpp"
 
 // ------------------------------------------------------------------------------------------------ octree
 

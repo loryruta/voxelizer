@@ -88,7 +88,7 @@ namespace voxelizer
 
 		atomic_counter();
 		atomic_counter(atomic_counter const&) = delete;
-		atomic_counter(atomic_counter&& other) = delete;
+		atomic_counter(atomic_counter&& other);
 
 		~atomic_counter();
 
@@ -116,6 +116,7 @@ namespace voxelizer
 
 	public:
 		debug_renderer();
+		~debug_renderer();
 
 		void cube(glm::vec3 min, glm::vec3 max, glm::vec3 color);
 		void line(glm::vec3 from, glm::vec3 to, glm::vec3 col);

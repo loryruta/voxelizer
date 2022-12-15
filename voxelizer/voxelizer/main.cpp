@@ -51,7 +51,7 @@ void run_voxelizer(
 	printf("Scene loaded\n");
 
 	voxelizer::voxelize voxelize{};
-	voxelizer::VoxelList voxel_list{};
+	voxelizer::voxel_list voxel_list{};
 
 	glm::vec3 area_size = scene.get_transformed_size();
 	glm::uvec3 volume_size = voxelizer::voxelize::calc_proportional_grid(area_size, volume_height);

@@ -25,7 +25,7 @@ void renderdoc_init()
 	}
 }
 
-void rgc::renderdoc::watch(bool capture, std::function<void()> const& f)
+void voxelizer::renderdoc::watch(bool capture, std::function<void()> const& f)
 {
 	if (g_handle == nullptr) {
 		renderdoc_init();

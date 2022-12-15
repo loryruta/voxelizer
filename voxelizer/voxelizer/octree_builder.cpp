@@ -4,13 +4,13 @@
 
 #include <shinji.hpp>
 
-#include "util/render_doc.hpp"
+#include "render_doc.hpp"
 
 voxelizer::octree_builder::octree_builder()
 {
 	// node_flag
 	{
-		Shader shader(GL_COMPUTE_SHADER);
+		shader shader(GL_COMPUTE_SHADER);
 		shader.source_from_string(shinji::load_resource_from_bundle("resources/shaders/svo_node_flag.comp").m_data);
 		shader.compile();
 
@@ -20,7 +20,7 @@ voxelizer::octree_builder::octree_builder()
 
 	// node_alloc
 	{
-		Shader shader(GL_COMPUTE_SHADER);
+		shader shader(GL_COMPUTE_SHADER);
 		shader.source_from_string(shinji::load_resource_from_bundle("resources/shaders/svo_node_alloc.comp").m_data);
 		shader.compile();
 
@@ -30,7 +30,7 @@ voxelizer::octree_builder::octree_builder()
 
 	// node_init
 	{
-		Shader shader(GL_COMPUTE_SHADER);
+		shader shader(GL_COMPUTE_SHADER);
 		shader.source_from_string(shinji::load_resource_from_bundle("resources/shaders/svo_node_init.comp").m_data);
 		shader.compile();
 
@@ -40,7 +40,7 @@ voxelizer::octree_builder::octree_builder()
 
 	// store_leaf
 	{
-		Shader shader(GL_COMPUTE_SHADER);
+		shader shader(GL_COMPUTE_SHADER);
 		shader.source_from_string(shinji::load_resource_from_bundle("resources/shaders/svo_store_leaf.comp").m_data);
 		shader.compile();
 
@@ -60,17 +60,17 @@ void voxelizer::octree_builder::clear(voxelizer::octree const& octree, uint32_t 
 
 	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 1, octree.m_buffer, (GLintptr)octree.m_offset, (GLintptr)octree.get_bytesize());
 
-	rgc::renderdoc::watch(false, [&]
+	voxelizer::renderdoc::watch(false, [&]
 	{
 		glDispatchCompute(glm::ceil(count / float(32)), 1, 1);
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	});
 
-	Program::unuse();
+	program::unuse();
 }
 
 void voxelizer::octree_builder::build(
-	VoxelList const& voxel_list,
+	voxelizer::voxel_list const& voxel_list,
 	uint32_t resolution,
 	GLuint buffer,
 	size_t offset,
@@ -81,7 +81,7 @@ void voxelizer::octree_builder::build(
 	octree.m_offset = offset;
 	octree.m_resolution = resolution;
 
-	AtomicCounter alloc_counter{};
+	atomic_counter alloc_counter{};
 
 	unsigned int start = 0, count = 8;
 	unsigned int alloc_start = start + count;
@@ -105,7 +105,7 @@ void voxelizer::octree_builder::build(
 		glDispatchCompute(glm::ceil(float(voxel_list.m_size) / float(32)), 1, 1);
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-		Program::unuse();
+		program::unuse();
 
 		printf("[octree_builder] Flagging - max_level: %d, level: %d, octree offset: %zu, octree size: %zu\n", octree.m_resolution, level, octree.m_offset, octree.get_bytesize());
 
@@ -121,13 +121,13 @@ void voxelizer::octree_builder::build(
 
 		alloc_counter.set_value(0);
 
-		rgc::renderdoc::watch(false, [&]
+		renderdoc::watch(false, [&]
 		{
 			glDispatchCompute(glm::ceil(count / float(32)), 1, 1);
 			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
 		});
 
-		Program::unuse();
+		program::unuse();
 
 		GLuint alloc_count = alloc_counter.get_value();
 		start = alloc_start;
@@ -156,7 +156,7 @@ void voxelizer::octree_builder::build(
 
 	int workgroup_count = glm::ceil(voxel_list.m_size / float(32));
 
-	rgc::renderdoc::watch(true, [&] {
+	renderdoc::watch(true, [&] {
 		glDispatchCompute(workgroup_count, 1, 1);
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	});
@@ -168,5 +168,5 @@ void voxelizer::octree_builder::build(
 		octree.get_bytesize()
 	);
 
-	Program::unuse();
+	program::unuse();
 }

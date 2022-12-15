@@ -5,23 +5,23 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <shinji.hpp>
 
-#include "util/render_doc.hpp"
+#include "render_doc.hpp"
 #include "voxel_list.hpp"
 
 voxelizer::voxelize::voxelize()
 {
 	// Program
-	Shader vertex(GL_VERTEX_SHADER);
+	shader vertex(GL_VERTEX_SHADER);
 	vertex.source_from_string(shinji::load_resource_from_bundle("resources/shaders/voxelize.vert").m_data);
 	vertex.compile();
 	m_program.attach_shader(vertex);
 
-	Shader geometry(GL_GEOMETRY_SHADER);
+	shader geometry(GL_GEOMETRY_SHADER);
 	geometry.source_from_string(shinji::load_resource_from_bundle("resources/shaders/voxelize.geom").m_data);
 	geometry.compile();
 	m_program.attach_shader(geometry);
 
-	Shader fragment(GL_FRAGMENT_SHADER);
+	shader fragment(GL_FRAGMENT_SHADER);
 	fragment.source_from_string(shinji::load_resource_from_bundle("resources/shaders/voxelize.frag").m_data);
 	fragment.compile();
 	m_program.attach_shader(fragment);
@@ -67,16 +67,16 @@ void voxelizer::voxelize::invoke(voxelizer::scene const& scene)
 
 	for (uint32_t mesh_idx = 0; mesh_idx < scene.m_meshes.size(); mesh_idx++)
 	{
-		Mesh const& mesh = scene.m_meshes[mesh_idx];
+		voxelizer::mesh const& mesh = scene.m_meshes[mesh_idx];
 
 		// Transform
 		glUniformMatrix4fv(m_program.get_uniform_location("u_mesh_transform"), 1, GL_FALSE, glm::value_ptr(mesh.m_transform));
 
 		// Color
-		glm::vec4 color = mesh.m_material->get_color(Material::Type::DIFFUSE);
+		glm::vec4 color = mesh.m_material->get_color(material::type::DIFFUSE);
 		glUniform4fv(m_program.get_uniform_location("u_color"), 1, glm::value_ptr(color));
 
-		GLuint texture = mesh.m_material->get_texture(Material::Type::DIFFUSE);
+		GLuint texture = mesh.m_material->get_texture(material::type::DIFFUSE);
 		glBindTexture(GL_TEXTURE_2D, texture);
 
 		glBindVertexArray(mesh.m_vao);
@@ -88,7 +88,7 @@ void voxelizer::voxelize::invoke(voxelizer::scene const& scene)
 
 		glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 4, m_errors_counter);
 
-		rgc::renderdoc::watch(true, [&]
+		voxelizer::renderdoc::watch(true, [&]
 		{
 			glDrawElements(GL_TRIANGLES, (GLsizei) mesh.m_element_count, GL_UNSIGNED_INT, nullptr);
 		});
@@ -120,7 +120,13 @@ void voxelizer::voxelize::invoke(voxelizer::scene const& scene)
 	glBindVertexArray(0);
 }
 
-void voxelizer::voxelize::operator()(voxelizer::VoxelList& voxel_list, scene const& scene, uint32_t voxels_on_y, glm::vec3 area_position, glm::vec3 area_size)
+void voxelizer::voxelize::operator()(
+	voxelizer::voxel_list& voxel_list,
+	voxelizer::scene const& scene,
+	uint32_t voxels_on_y,
+	glm::vec3 area_position,
+	glm::vec3 area_size
+)
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_ALPHA_TEST);
@@ -199,7 +205,7 @@ void voxelizer::voxelize::operator()(voxelizer::VoxelList& voxel_list, scene con
 
 	//
 
-	Program::unuse();
+	voxelizer::program::unuse();
 
 	glDeleteFramebuffers(1, &framebuffer);
 }

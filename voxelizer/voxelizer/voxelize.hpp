@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 
-#include "util/gl.hpp"
+#include "gl.hpp"
 #include "scene.hpp"
 #include "voxel_list.hpp"
 
@@ -16,8 +16,8 @@ namespace voxelizer
 		void invoke(voxelizer::scene const& scene);
 
 	public:
-		Program m_program;
-		AtomicCounter m_atomic_counter;
+		program m_program;
+		atomic_counter m_atomic_counter;
 		GLuint m_errors_counter;
 
 		voxelize();
@@ -33,6 +33,12 @@ namespace voxelizer
 		 * @param offset      Where to start taking the voxelization area.
 		 * @param size        The size of the voxelization area.
 		 */
-		void operator()(VoxelList& voxel_list, scene const& scene, uint32_t voxels_on_y, glm::vec3 area_position, glm::vec3 area_size);
+		void operator()(
+			voxelizer::voxel_list& voxel_list,
+			voxelizer::scene const& scene,
+			uint32_t voxels_on_y,
+			glm::vec3 area_position,
+			glm::vec3 area_size
+		);
 	};
 }

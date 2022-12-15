@@ -2,6 +2,7 @@
 
 #include <array>
 #include <memory>
+#include <vector>
 
 #include <glad/glad.h>
 
@@ -38,7 +39,7 @@ namespace voxelizer
 
 		~material();
 
-		glm::vec4 const& get_color(material::type type) const
+		glm::vec4& get_color(material::type type)
 		{
 			return m_colors[type];
 		}

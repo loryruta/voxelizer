@@ -12,102 +12,102 @@
 #include <stb_image.h>
 
 // ------------------------------------------------------------------------------------------------
-// Mesh
+// voxelizer::mesh
 // ------------------------------------------------------------------------------------------------
 
-void load_position_vbo(Mesh& mesh, aiMesh const& ai_mesh)
+void load_position_vbo(voxelizer::mesh& mesh, aiMesh const& ai_mesh)
 {
 	glBindVertexArray(mesh.m_vao);
-	glBindBuffer(GL_ARRAY_BUFFER, mesh.m_vbos[Mesh::Attribute::POSITION]);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh.m_vbos[voxelizer::mesh::attribute::POSITION]);
 
 	glBufferData(GL_ARRAY_BUFFER, size_t(ai_mesh.mNumVertices) * 3 * sizeof(GLfloat), ai_mesh.mVertices, GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(Mesh::Attribute::POSITION);
-	glVertexAttribPointer(Mesh::Attribute::POSITION, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+	glEnableVertexAttribArray(voxelizer::mesh::attribute::POSITION);
+	glVertexAttribPointer(voxelizer::mesh::attribute::POSITION, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // Unbind
 	glBindVertexArray(0);
 }
 
-void load_normal_vbo(Mesh& mesh, aiMesh const& ai_mesh)
+void load_normal_vbo(voxelizer::mesh& mesh, aiMesh const& ai_mesh)
 {
 	glBindVertexArray(mesh.m_vao);
-	glBindBuffer(GL_ARRAY_BUFFER, mesh.m_vbos[Mesh::Attribute::NORMAL]);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh.m_vbos[voxelizer::mesh::attribute::NORMAL]);
 
-	glEnableVertexAttribArray(Mesh::Attribute::NORMAL);
+	glEnableVertexAttribArray(voxelizer::mesh::attribute::NORMAL);
 
 	if (ai_mesh.HasNormals())
 	{
 		glBufferData(GL_ARRAY_BUFFER, size_t(ai_mesh.mNumVertices) * 3 * sizeof(GLfloat), ai_mesh.mNormals, GL_STATIC_DRAW);
 
-		glVertexAttribPointer(Mesh::Attribute::NORMAL, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+		glVertexAttribPointer(voxelizer::mesh::attribute::NORMAL, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
 	}
 	else
 	{
 		GLfloat normals[] = { 0.0f, 0.0f, 0.0f };
 		glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(GLfloat), normals, GL_STATIC_DRAW);
 
-		glVertexAttribPointer(Mesh::Attribute::NORMAL, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		glVertexAttribDivisor(Mesh::Attribute::NORMAL, ai_mesh.mNumVertices);
+		glVertexAttribPointer(voxelizer::mesh::attribute::NORMAL, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glVertexAttribDivisor(voxelizer::mesh::attribute::NORMAL, ai_mesh.mNumVertices);
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
 
-void load_uv_vbo(Mesh& mesh, aiMesh const& ai_mesh)
+void load_uv_vbo(voxelizer::mesh& mesh, aiMesh const& ai_mesh)
 {
 	glBindVertexArray(mesh.m_vao);
-	glBindBuffer(GL_ARRAY_BUFFER, mesh.m_vbos[Mesh::Attribute::UV]);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh.m_vbos[voxelizer::mesh::attribute::UV]);
 
-	glEnableVertexAttribArray(Mesh::Attribute::UV);
+	glEnableVertexAttribArray(voxelizer::mesh::attribute::UV);
 
 	if (ai_mesh.HasTextureCoords(0))
 	{
 		glBufferData(GL_ARRAY_BUFFER, size_t(ai_mesh.mNumVertices) * 3 * sizeof(GLfloat), ai_mesh.mTextureCoords[0], GL_STATIC_DRAW);
 
-		glVertexAttribPointer(Mesh::Attribute::UV, 2, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+		glVertexAttribPointer(voxelizer::mesh::attribute::UV, 2, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
 	}
 	else
 	{
 		GLfloat uv[] = { 0.0f, 0.0f };
 		glBufferData(GL_ARRAY_BUFFER, 2 * sizeof(GLfloat), uv, GL_STATIC_DRAW);
 
-		glVertexAttribPointer(Mesh::Attribute::UV, 2, GL_FLOAT, GL_FALSE, 0, 0);
-		glVertexAttribDivisor(Mesh::Attribute::UV, ai_mesh.mNumVertices);
+		glVertexAttribPointer(voxelizer::mesh::attribute::UV, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		glVertexAttribDivisor(voxelizer::mesh::attribute::UV, ai_mesh.mNumVertices);
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
 
-void load_color_vbo(Mesh& mesh, aiMesh const& ai_mesh)
+void load_color_vbo(voxelizer::mesh& mesh, aiMesh const& ai_mesh)
 {
 	glBindVertexArray(mesh.m_vao);
-	glBindBuffer(GL_ARRAY_BUFFER, mesh.m_vbos[Mesh::Attribute::COLOR]);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh.m_vbos[voxelizer::mesh::attribute::COLOR]);
 
-	glEnableVertexAttribArray(Mesh::Attribute::COLOR);
+	glEnableVertexAttribArray(voxelizer::mesh::attribute::COLOR);
 
-	if (ai_mesh.HasVertexColors(Mesh::Attribute::COLOR))
+	if (ai_mesh.HasVertexColors(voxelizer::mesh::attribute::COLOR))
 	{
 		glBufferData(GL_ARRAY_BUFFER, size_t(ai_mesh.mNumVertices) * 4 * sizeof(float), ai_mesh.mColors[0], GL_STATIC_DRAW);
 
-		glVertexAttribPointer(Mesh::Attribute::COLOR, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+		glVertexAttribPointer(voxelizer::mesh::attribute::COLOR, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
 	}
 	else
 	{
 		GLfloat color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 		glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(float), color, GL_STATIC_DRAW);
 
-		glVertexAttribPointer(Mesh::Attribute::COLOR, 4, GL_FLOAT, GL_FALSE, 0, 0);
-		glVertexAttribDivisor(Mesh::Attribute::COLOR, ai_mesh.mNumVertices);
+		glVertexAttribPointer(voxelizer::mesh::attribute::COLOR, 4, GL_FLOAT, GL_FALSE, 0, 0);
+		glVertexAttribDivisor(voxelizer::mesh::attribute::COLOR, ai_mesh.mNumVertices);
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
 
-void load_ebo(Mesh& mesh, aiMesh const& ai_mesh)
+void load_ebo(voxelizer::mesh& mesh, aiMesh const& ai_mesh)
 {
 	mesh.m_element_count = size_t(ai_mesh.mNumFaces) * 3;
 
@@ -131,7 +131,7 @@ void load_ebo(Mesh& mesh, aiMesh const& ai_mesh)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, NULL);
 }
 
-void calc_transformed_min_max(Mesh& mesh, aiMesh const& ai_mesh)
+void calc_transformed_min_max(voxelizer::mesh& mesh, aiMesh const& ai_mesh)
 {
 	mesh.m_transformed_min = glm::vec3(std::numeric_limits<float>::infinity());
 	mesh.m_transformed_max = glm::vec3(-std::numeric_limits<float>::infinity());
@@ -146,9 +146,9 @@ void calc_transformed_min_max(Mesh& mesh, aiMesh const& ai_mesh)
 	}
 }
 
-Mesh load_mesh(aiMesh const& ai_mesh, aiMatrix4x4 const& ai_transform)
+voxelizer::mesh load_mesh(aiMesh const& ai_mesh, aiMatrix4x4 const& ai_transform)
 {
-	Mesh mesh{};
+	voxelizer::mesh mesh{};
 
 	mesh.m_triangle_count = ai_mesh.mNumFaces;
 	mesh.m_transform = glm::transpose(glm::make_mat4(ai_transform[0]));
@@ -166,7 +166,7 @@ Mesh load_mesh(aiMesh const& ai_mesh, aiMatrix4x4 const& ai_transform)
 }
 
 // ================================================================================================================================
-// Material
+// voxelizer::material
 // ================================================================================================================================
 
 void load_material_texture(
@@ -243,32 +243,32 @@ void load_material_color(glm::vec4& color, const char* key, unsigned int type, u
 		color = glm::vec4(0);
 }
 
-std::shared_ptr<Material> load_material(
+std::shared_ptr<voxelizer::material> load_material(
 	aiScene const& ai_scene,
 	std::filesystem::path const& folder,
 	aiMaterial const* ai_material
 )
 {
-	std::shared_ptr<Material> material = std::make_shared<Material>();
-	Material::Type type{};
+	std::shared_ptr<voxelizer::material> material = std::make_shared<voxelizer::material>();
+	voxelizer::material::type type{};
 	
-	type = Material::Type::NONE;
+	type = voxelizer::material::type::NONE;
 	load_material_texture(ai_scene, material->get_texture(type), aiTextureType_NONE, folder, ai_material);
 	material->get_color(type) = glm::vec4(1);
 
-	type = Material::Type::DIFFUSE;
+	type = voxelizer::material::type::DIFFUSE;
 	load_material_texture(ai_scene, material->get_texture(type), aiTextureType_DIFFUSE, folder, ai_material);
 	load_material_color(material->get_color(type), AI_MATKEY_COLOR_DIFFUSE, ai_material);
 
-	type = Material::Type::AMBIENT;
+	type = voxelizer::material::type::AMBIENT;
 	load_material_texture(ai_scene, material->get_texture(type), aiTextureType_AMBIENT, folder, ai_material);
 	load_material_color(material->get_color(type), AI_MATKEY_COLOR_AMBIENT, ai_material);
 
-	type = Material::Type::SPECULAR;
+	type = voxelizer::material::type::SPECULAR;
 	load_material_texture(ai_scene, material->get_texture(type), aiTextureType_SPECULAR, folder, ai_material);
 	load_material_color(material->get_color(type), AI_MATKEY_COLOR_SPECULAR, ai_material);
 
-	type = Material::Type::EMISSIVE;
+	type = voxelizer::material::type::EMISSIVE;
 	load_material_texture(ai_scene, material->get_texture(type), aiTextureType_EMISSIVE, folder, ai_material);
 	load_material_color(material->get_color(type), AI_MATKEY_COLOR_EMISSIVE, ai_material);
 
@@ -287,7 +287,7 @@ void load_node(voxelizer::scene& scene, aiScene const& ai_scene, const std::file
 	{
 		auto ai_mesh = ai_scene.mMeshes[ai_node->mMeshes[i]];
 
-		Mesh mesh = load_mesh(*ai_mesh, ai_transform);
+		voxelizer::mesh mesh = load_mesh(*ai_mesh, ai_transform);
 		mesh.m_material = load_material(ai_scene, folder, ai_scene.mMaterials[ai_mesh->mMaterialIndex]);
 
 		scene.m_transformed_min = glm::min(scene.m_transformed_min, mesh.m_transformed_min);

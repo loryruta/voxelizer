@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 
-#include "util/gl.hpp"
+#include "gl.hpp"
 #include "util/screen_quad.hpp"
 
 namespace voxelizer

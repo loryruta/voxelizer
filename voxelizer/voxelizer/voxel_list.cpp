@@ -2,22 +2,22 @@
 
 #include <iostream>
 
-voxelizer::VoxelList::VoxelList()
+voxelizer::voxel_list::voxel_list()
 {}
 
-void voxelizer::VoxelList::alloc(size_t size)
+void voxelizer::voxel_list::alloc(size_t size)
 {
 	m_size = size;
 
-	this->position_buffer.load_data(size * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-	this->position_buffer.set_format(GL_R32UI);
+	m_position_buffer.load_data(size * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
+	m_position_buffer.set_format(GL_R32UI);
 
-	this->color_buffer.load_data(size * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-	this->color_buffer.set_format(GL_RGBA8);
+	m_color_buffer.load_data(size * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
+	m_color_buffer.set_format(GL_RGBA8);
 }
 
-void voxelizer::VoxelList::bind(GLuint position_binding, GLuint color_binding) const
+void voxelizer::voxel_list::bind(GLuint position_binding, GLuint color_binding) const
 {
-	this->position_buffer.bind(position_binding, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGB10_A2UI);
-	this->color_buffer.bind(color_binding, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
+	m_position_buffer.bind(position_binding, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGB10_A2UI);
+	m_color_buffer.bind(color_binding, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
 }
