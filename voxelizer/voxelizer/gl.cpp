@@ -341,7 +341,7 @@ void voxelizer::debug_renderer::cube(glm::vec3 min, glm::vec3 max, glm::vec3 col
 	line(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, max.y, max.z), color);
 }
 
-void voxelizer::debug_renderer::flush(glm::mat4 const& proj_mtx, glm::mat4 const& view_mtx)
+void voxelizer::debug_renderer::flush(glm::mat4 const& view, glm::mat4 const& projection)
 {
 	if (m_lines.empty())
 		return;
@@ -360,8 +360,8 @@ void voxelizer::debug_renderer::flush(glm::mat4 const& proj_mtx, glm::mat4 const
 
 	m_program.use();
 
-	glUniformMatrix4fv(m_program.get_uniform_location("u_view"), 1, GL_FALSE, glm::value_ptr(view_mtx));
-	glUniformMatrix4fv(m_program.get_uniform_location("u_proj"), 1, GL_FALSE, glm::value_ptr(proj_mtx));
+	glUniformMatrix4fv(m_program.get_uniform_location("u_view"), 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(m_program.get_uniform_location("u_proj"), 1, GL_FALSE, glm::value_ptr(projection));
 
 	glBindBuffer(GL_ARRAY_BUFFER, m_buffer);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr) (m_lines.size() * sizeof(float)), m_lines.data());
