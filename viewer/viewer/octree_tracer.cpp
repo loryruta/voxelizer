@@ -11,13 +11,13 @@
 voxelizer::octree_tracer::octree_tracer()
 {
 	// Program
-	Shader screen_quad(GL_VERTEX_SHADER);
+	shader screen_quad(GL_VERTEX_SHADER);
 	screen_quad.source_from_string(voxelizer::viewer::shinji::load_resource_from_bundle("resources/shaders/screen_quad.vert").m_data);
 	screen_quad.compile();
 
 	m_program.attach_shader(screen_quad);
 
-	Shader svo_tracer(GL_FRAGMENT_SHADER);
+	shader svo_tracer(GL_FRAGMENT_SHADER);
 	svo_tracer.source_from_string(voxelizer::viewer::shinji::load_resource_from_bundle("resources/shaders/svo_tracer.frag").m_data);
 	svo_tracer.compile();
 
@@ -61,5 +61,5 @@ void voxelizer::octree_tracer::render(
 
 	m_screen_quad.render();
 
-	Program::unuse();
+	program::unuse();
 }

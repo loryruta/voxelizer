@@ -8,13 +8,13 @@
 
 voxelizer::scene_renderer::scene_renderer()
 {
-	Shader vert_shader(GL_VERTEX_SHADER);
+	shader vert_shader(GL_VERTEX_SHADER);
 	vert_shader.source_from_string(viewer::shinji::load_resource_from_bundle("resources/shaders/scene.vert").m_data);
 	vert_shader.compile();
 
 	m_program.attach_shader(vert_shader);
 
-	Shader frag_shader(GL_FRAGMENT_SHADER);
+	shader frag_shader(GL_FRAGMENT_SHADER);
 	frag_shader.source_from_string(viewer::shinji::load_resource_from_bundle("resources/shaders/scene.frag").m_data);
 	frag_shader.compile();
 

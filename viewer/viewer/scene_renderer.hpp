@@ -1,18 +1,17 @@
 #pragma once
 
 #include <voxelizer/scene.hpp>
-#include <voxelizer/util/camera.hpp>
-#include <voxelizer/util/gl.hpp>
+#include <voxelizer/gl.hpp>
 
 namespace voxelizer
 {
 	class scene_renderer
 	{
 	private:
-		Program m_program;
+		program m_program;
 
 	public:
-		Material::Type m_view_type = Material::Type::DIFFUSE; // TODO
+		material::type m_view_type = material::type::DIFFUSE; // TODO
 
 		scene_renderer();
 

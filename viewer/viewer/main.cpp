@@ -7,13 +7,13 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <voxelizer/util/camera.hpp>
 #include <voxelizer/ai_scene_loader.hpp>
 #include <voxelizer/voxelize.hpp>
 #include <voxelizer/octree_builder.hpp>
 
 #include "scene_renderer.hpp"
 #include "octree_tracer.hpp"
+#include "camera.hpp"
 
 bool g_show_scene = false;
 bool g_show_octree = true;
@@ -120,7 +120,7 @@ std::pair<GLuint, size_t> load_octree_from_file(char const* filename)
 std::pair<GLuint, size_t> build_octree_from_scene(voxelizer::scene const& scene, uint32_t volume_height)
 {
 	voxelizer::voxelize voxelize{};
-	voxelizer::VoxelList voxel_list{};
+	voxelizer::voxel_list voxel_list{};
 
 	glm::vec3 area_size = scene.get_transformed_size();
 	glm::uvec3 volume_size = voxelizer::voxelize::calc_proportional_grid(area_size, volume_height);

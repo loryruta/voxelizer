@@ -2,17 +2,16 @@
 
 #include <glm/glm.hpp>
 
-#include <voxelizer/util/gl.hpp>
-#include <voxelizer/util/screen_quad.hpp>
 #include <voxelizer/octree.hpp>
+#include <voxelizer/gl.hpp>
 
 namespace voxelizer
 {
 	class octree_tracer
 	{
 	private:
-		Program m_program;
-		ScreenQuad m_screen_quad;
+		program m_program;
+		screen_quad m_screen_quad;
 
 	public:
 		octree_tracer();
