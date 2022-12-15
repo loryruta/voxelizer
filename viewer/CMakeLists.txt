@@ -5,6 +5,8 @@ set(SRC
 	viewer/octree_tracer.hpp
 	viewer/scene_renderer.hpp
 	viewer/scene_renderer.cpp
+	viewer/camera.cpp
+	viewer/camera.hpp
 )
 
 add_executable(viewer_exec ${SRC})

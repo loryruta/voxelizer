@@ -1,7 +1,5 @@
 
 set(SRC
-	voxelizer/util/camera.cpp
-	voxelizer/util/camera.hpp
 	voxelizer/gl.cpp
 	voxelizer/gl.hpp
 	voxelizer/render_doc.cpp
