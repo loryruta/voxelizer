@@ -3,31 +3,31 @@
 #include "scene.hpp"
 
 // ------------------------------------------------------------------------------------------------
-// Material
+// material
 // ------------------------------------------------------------------------------------------------
 
-Material::Material()
+voxelizer::material::material()
 {
-	glGenTextures(Material::Type::size, this->texture);
+	glGenTextures(material::type::Count, m_textures);
 }
 
-Material::~Material()
+voxelizer::material::~material()
 {
-	glDeleteTextures(Material::Type::size, this->texture);
+	glDeleteTextures(material::type::Count, m_textures);
 }
 
 // ------------------------------------------------------------------------------------------------
-// Mesh
+// mesh
 // ------------------------------------------------------------------------------------------------
 
-Mesh::Mesh()
+voxelizer::mesh::mesh()
 {
 	glGenVertexArrays(1, &m_vao);
-	glGenBuffers(Mesh::Attribute::size, m_vbos.data());
+	glGenBuffers(mesh::attribute::Count, m_vbos.data());
 	glGenBuffers(1, &m_ebo);
 }
 
-Mesh::Mesh(Mesh&& other) noexcept :
+voxelizer::mesh::mesh(voxelizer::mesh&& other) noexcept :
 	m_valid(true),
 
 	m_vao(other.m_vao),
@@ -43,13 +43,12 @@ Mesh::Mesh(Mesh&& other) noexcept :
 	other.m_valid = false;
 }
 
-Mesh::~Mesh()
+voxelizer::mesh::~mesh()
 {
 	if (m_valid)
 	{
 		glDeleteVertexArrays(1, &m_vao);
-		glDeleteBuffers(Mesh::Attribute::size, m_vbos.data());
+		glDeleteBuffers(mesh::attribute::Count, m_vbos.data());
 		glDeleteBuffers(1, &m_ebo);
 	}
 }
-
